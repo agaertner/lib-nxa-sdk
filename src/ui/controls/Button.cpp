@@ -1,6 +1,7 @@
+#include "../../../nexus-sdk-resource.h"
 #include "Button.h"
 #include "../../../NexusSDK.h"
-#include "../../../nexus-sdk-resource.h"
+
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -29,7 +30,7 @@ namespace UI {
 
         if (isClicked) {
             if (OnClick) OnClick();
-            NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
+            NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
         }
 
         float dt = ImGui::GetIO().DeltaTime;
@@ -59,12 +60,11 @@ namespace UI {
             float uv1x = ((frame + 1) * ATLAS_SPRITE_WIDTH) / totalWidth;
             float uv1y = ATLAS_SPRITE_HEIGHT / totalHeight;
 
-            // Draw button background
             drawList->AddImage((ImTextureID)texStates->Resource, 
                                ImVec2(pos.x + 3, pos.y + 3), 
                                ImVec2(pos.x + size.x - 3, pos.y + size.y - 2), 
                                ImVec2(uv0x, uv0y), 
-                               ImVec2(uv1x, uv1y));
+                               ImVec2(uv1x, uv1y), ImGui::GetColorU32(IM_COL32_WHITE));
         }
 
         if (texBorder) {
@@ -75,22 +75,22 @@ namespace UI {
             drawList->AddImage((ImTextureID)texBorder->Resource,
                                ImVec2(pos.x + 2, pos.y),
                                ImVec2(pos.x + size.x - 3, pos.y + 4),
-                               ImVec2(0/bw, 0/bh), ImVec2(1/bw, 4/bh));
+                               ImVec2(0/bw, 0/bh), ImVec2(1/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
             // Right
             drawList->AddImage((ImTextureID)texBorder->Resource,
                                ImVec2(pos.x + size.x - 4, pos.y + 2),
                                ImVec2(pos.x + size.x, pos.y + size.y - 1),
-                               ImVec2(0/bw, 1/bh), ImVec2(4/bw, 2/bh));
+                               ImVec2(0/bw, 1/bh), ImVec2(4/bw, 2/bh), ImGui::GetColorU32(IM_COL32_WHITE));
             // Bottom
             drawList->AddImage((ImTextureID)texBorder->Resource,
                                ImVec2(pos.x + 3, pos.y + size.y - 4),
                                ImVec2(pos.x + size.x - 3, pos.y + size.y),
-                               ImVec2(1/bw, 0/bh), ImVec2(2/bw, 4/bh));
+                               ImVec2(1/bw, 0/bh), ImVec2(2/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
             // Left
             drawList->AddImage((ImTextureID)texBorder->Resource,
                                ImVec2(pos.x, pos.y + 2),
                                ImVec2(pos.x + 4, pos.y + size.y - 1),
-                               ImVec2(0/bw, 3/bh), ImVec2(4/bw, 4/bh));
+                               ImVec2(0/bw, 3/bh), ImVec2(4/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
         }
 
         if (TextLabel) {

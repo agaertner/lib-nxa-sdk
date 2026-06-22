@@ -1,0 +1,62 @@
+{
+    "Action_Confirm": {
+        "fr": "Confirmer",
+        "en": "Confirm",
+        "es": "Confirme",
+        "de": "Bestätigen"
+    },
+    "Action_Cancel": {
+        "fr": "Annuler",
+        "en": "Cancel",
+        "es": "Cancelar",
+        "de": "Abbrechen"
+    },
+    "Action_Apply": {
+        "fr": "Appliquer",
+        "en": "Apply",
+        "es": "Aplique",
+        "de": "Anwenden"
+    },
+    "Action_Accept": {
+        "fr": "Accepter",
+        "en": "Accept",
+        "es": "Aceptar",
+        "de": "Annehmen"
+    },
+    "Action_Decline": {
+        "fr": "Refuser",
+        "en": "Decline",
+        "es": "Rechazar",
+        "de": "Ablehnen"
+    },
+    "Action_Ignore": {
+        "fr": "Ignorer",
+        "en": "Ignore",
+        "es": "Ignore",
+        "de": "Ignorieren"
+    },
+    "Action_No": {
+        "fr": "Non",
+        "en": "No",
+        "es": "No",
+        "de": "Nein"
+    },
+    "Action_OK": {
+        "fr": "OK",
+        "en": "OK",
+        "es": "OK",
+        "de": "OK"
+    },
+    "Action_Close": {
+        "fr": "Fermer",
+        "en": "Close",
+        "es": "Cerrar",
+        "de": "Schließen"
+    },
+    "Action_Yes": {
+        "fr": "Oui",
+        "en": "Yes",
+        "es": "Sí",
+        "de": "Ja"
+    }
+}

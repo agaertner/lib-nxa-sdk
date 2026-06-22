@@ -1,6 +1,7 @@
+#include "../../../nexus-sdk-resource.h"
 #include "Slider.h"
 #include "../../../NexusSDK.h"
-#include "../../../nexus-sdk-resource.h"
+
 
 #include <imgui/imgui.h>
 #include <algorithm>
@@ -24,9 +25,13 @@ namespace UI {
             float offset = (height - ImGui::GetFontSize()) / 2.0f;
             ImGui::SetCursorPosY(currentY + offset);
             
+            float startX = ImGui::GetCursorPosX();
             TextLabel->Render();
             
             ImGui::SameLine();
+            if (LabelWidth > 0.0f) {
+                ImGui::SetCursorPosX(startX + LabelWidth);
+            }
             ImGui::SetCursorPosY(currentY);
         }
 
@@ -64,19 +69,19 @@ namespace UI {
             // Left cap
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 tPos, ImVec2(tPos.x + capW, tPos.y + trackHeight),
-                ImVec2(0, 0), ImVec2(capW / 256.0f, 1));
+                ImVec2(0, 0), ImVec2(capW / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
                 
             // Middle
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 ImVec2(tPos.x + capW, tPos.y), ImVec2(tPos.x + width - capW, tPos.y + trackHeight),
-                ImVec2(capW / 256.0f, 0), ImVec2((256.0f - capW) / 256.0f, 1));
+                ImVec2(capW / 256.0f, 0), ImVec2((256.0f - capW) / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
                 
             // Right cap
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 ImVec2(tPos.x + width - capW, tPos.y), ImVec2(tPos.x + width, tPos.y + trackHeight),
-                ImVec2((256.0f - capW) / 256.0f, 0), ImVec2(1, 1));
+                ImVec2((256.0f - capW) / 256.0f, 0), ImVec2(1, 1), ImGui::GetColorU32(IM_COL32_WHITE));
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), IM_COL32(50,50,50,255));
+            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(50,50,50,255)));
         }
 
         // Draw nub
@@ -87,9 +92,9 @@ namespace UI {
         ImVec2 nubMax = ImVec2(nubMin.x + nubSize, nubMin.y + nubSize);
 
         if (texNub) {
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texNub->Resource, nubMin, nubMax);
+            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texNub->Resource, nubMin, nubMax, ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(nubMin, nubMax, IM_COL32(200,200,200,255));
+            ImGui::GetWindowDrawList()->AddRectFilled(nubMin, nubMax, ImGui::GetColorU32(IM_COL32(200,200,200,255)));
         }
 
         char valBuf[32];
@@ -97,8 +102,8 @@ namespace UI {
         ImVec2 valSize = ImGui::CalcTextSize(valBuf);
         ImVec2 valPos = ImVec2(pos.x + (width - valSize.x) / 2.0f, pos.y + (height - valSize.y) / 2.0f);
         // Draw with drop shadow for readability
-        ImGui::GetWindowDrawList()->AddText(ImVec2(valPos.x + 1, valPos.y + 1), IM_COL32(0,0,0,255), valBuf);
-        ImGui::GetWindowDrawList()->AddText(valPos, IM_COL32(255,255,255,255), valBuf);
+        ImGui::GetWindowDrawList()->AddText(ImVec2(valPos.x + 1, valPos.y + 1), ImGui::GetColorU32(IM_COL32(0,0,0,255)), valBuf);
+        ImGui::GetWindowDrawList()->AddText(valPos, ImGui::GetColorU32(IM_COL32(255,255,255,255)), valBuf);
     }
 
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "nexus-sdk-resource.h"
 
 // Core Managers
 #include "src/managers/AudioManager.h"
@@ -17,6 +18,7 @@
 #include "src/ui/controls/Dropdown.h"
 #include "src/ui/controls/Menu.h"
 #include "src/ui/controls/FlowPanel.h"
+#include "src/ui/controls/StandardDialog.h"
 
 // Utilities
 #include "src/utils/AsyncFont.h"
@@ -24,6 +26,7 @@
 #include "src/utils/ImID.h"
 
 #include <filesystem>
+#include <windows.h>
 
 namespace NexusSDK {
     inline AddonAPI_t* API = nullptr;
@@ -31,6 +34,7 @@ namespace NexusSDK {
     inline AudioManager* Audio = nullptr;
     inline ContentManager* Content = nullptr;
     inline LocalManager* Local = nullptr;
+    inline LocalManager* SDKLocal = nullptr;
 
     inline void Initialize(AddonAPI_t* api, HMODULE hSelf, const std::filesystem::path& addonPath) {
         API = api;
@@ -38,13 +42,35 @@ namespace NexusSDK {
         if (!Audio) Audio = new AudioManager(api);
         if (!Content) Content = new ContentManager(api, hSelf);
         if (!Local && !addonPath.empty()) Local = new LocalManager(addonPath, api);
+        if (!SDKLocal) {
+            SDKLocal = new LocalManager("", api);
+            HRSRC hRes = FindResourceA(hSelf, "NXA_SDK_LOCALIZATION", (LPCSTR)10); // RT_RCDATA is 10
+            if (hRes) {
+                HGLOBAL hData = LoadResource(hSelf, hRes);
+                if (hData) {
+                    DWORD dataSize = SizeofResource(hSelf, hRes);
+                    void* pData = LockResource(hData);
+                    if (pData && dataSize > 0) {
+                        std::string jsonStr(static_cast<const char*>(pData), dataSize);
+                        SDKLocal->LoadFromMemory(jsonStr);
+                    }
+                }
+            }
+        }
     }
 
     inline void Shutdown() {
         if (Audio) { delete Audio; Audio = nullptr; }
         if (Content) { delete Content; Content = nullptr; }
         if (Local) { delete Local; Local = nullptr; }
+        if (SDKLocal) { delete SDKLocal; SDKLocal = nullptr; }
         API = nullptr;
         Module = nullptr;
+    }
+
+    namespace UI {
+        inline void RenderDialogs() {
+            StandardDialog::RenderAll();
+        }
     }
 }

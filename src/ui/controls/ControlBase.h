@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string>
 #include <vector>
@@ -25,6 +25,7 @@ public:
     virtual ~ControlBase() = default;
 
     // Retained State
+    float Opacity = 1.0f;
     void SetVisible(bool visible) { m_visible = visible; }
     bool IsVisible() const { return m_visible; }
 
@@ -74,9 +75,14 @@ public:
 
     // The main render pass
     void Render() {
-        if (!m_visible) return;
+        if (!m_visible || Opacity <= 0.0f) return;
 
         ImGui::PushID(m_id.c_str());
+
+        bool pushAlpha = (Opacity < 1.0f);
+        if (pushAlpha) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * Opacity);
+        }
 
         if (m_hasAbsolutePosition) {
             ImGui::SetCursorPos(m_position);
@@ -89,6 +95,10 @@ public:
         OnRender();
 
         HandleMouseEvents(screenPos);
+
+        if (pushAlpha) {
+            ImGui::PopStyleVar();
+        }
 
         ImGui::PopID();
     }

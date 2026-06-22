@@ -12,7 +12,7 @@ NXA_CB_CHECKED            RCDATA "../submodules/lib-nxa-sdk/ref/textures/control
 NXA_CB_CHECKED_ACTIVE     RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-active.png"
 NXA_CB_CHECKED_DISABLED   RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-disabled.png"
 
-NXA_AUDIO_CLICK WAVE "../submodules/lib-nxa-sdk/ref/audio/button-click.wav"
+NXA_AUDIO_BUTTON_CLICK WAVE "../submodules/lib-nxa-sdk/ref/audio/button-click.wav"
 
 NXA_DD_ARROW RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/dropdown/156057.png"
 
@@ -25,3 +25,9 @@ NXA_WAV_MENUCLICK3 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-3.wav"
 NXA_WAV_MENUCLICK4 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-4.wav"
 
 NXA_FONT_MENOMONIA RCDATA "../submodules/lib-nxa-sdk/ref/fonts/menomonia.ttf"
+
+NXA_DIALOG_ICONS RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/dialog/154985.png"
+NXA_DIALOG_BG RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/dialog/156003.png"
+NXA_AUDIO_MENU_ITEM_CLICK WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-item-click.wav"
+
+NXA_SDK_LOCALIZATION RCDATA "../submodules/lib-nxa-sdk/ref/localization.json"

@@ -21,6 +21,7 @@ public:
     float* Value = nullptr;
     float Min = 0.0f;
     float Max = 1.0f;
+    float LabelWidth = 0.0f;
     std::string Format = "%.2f";
     std::function<void(float)> OnValueChanged;
 

@@ -87,17 +87,37 @@ namespace NexusSDK {
     void AudioManager::StopAll() {
         std::lock_guard<std::mutex> lock(m_mutex);
         for (auto& pair : m_activeVoices) {
-            pair.second->Stop(0);
-            pair.second->DestroyVoice();
+            pair.second.voice->Stop(0);
+            pair.second.voice->DestroyVoice();
         }
         m_activeVoices.clear();
     }
 
-    void AudioManager::SetVolume(float volume) {
+    float AudioManager::GetChannelVolume(const std::string& channel) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_channelVolumes.find(channel);
+        return it != m_channelVolumes.end() ? it->second : 1.0f;
+    }
+
+    void AudioManager::SetMasterVolume(float volume) {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_masterVolume = volume;
         for (auto& pair : m_activeVoices) {
-            pair.second->SetVolume(m_masterVolume);
+            auto it = m_channelVolumes.find(pair.second.channel);
+            float channelVol = it != m_channelVolumes.end() ? it->second : 1.0f;
+            float vol = m_masterVolume * channelVol;
+            pair.second.voice->SetVolume(vol);
+        }
+    }
+
+    void AudioManager::SetChannelVolume(const std::string& channel, float volume) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_channelVolumes[channel] = volume;
+        for (auto& pair : m_activeVoices) {
+            if (pair.second.channel == channel) {
+                float vol = m_masterVolume * volume;
+                pair.second.voice->SetVolume(vol);
+            }
         }
     }
 
@@ -105,8 +125,8 @@ namespace NexusSDK {
         std::lock_guard<std::mutex> lock(m_mutex);
         auto it = m_activeVoices.find(voiceId);
         if (it != m_activeVoices.end()) {
-            it->second->Stop(0);
-            it->second->DestroyVoice();
+            it->second.voice->Stop(0);
+            it->second.voice->DestroyVoice();
             m_activeVoices.erase(it);
         }
     }
@@ -139,16 +159,16 @@ namespace NexusSDK {
         return 0;
     }
 
-    AudioHandle AudioManager::Play(const std::string& resourceName, bool loop) {
+    AudioHandle AudioManager::Play(const std::string& resourceName, const std::string& channel, bool loop) {
         if (!m_initialized) return AudioHandle(0, this);
         std::lock_guard<std::mutex> lock(m_mutex);
 
         // Clean up finished voices
         for (auto it = m_activeVoices.begin(); it != m_activeVoices.end(); ) {
             XAUDIO2_VOICE_STATE state;
-            it->second->GetState(&state);
+            it->second.voice->GetState(&state);
             if (state.BuffersQueued == 0) {
-                it->second->DestroyVoice();
+                it->second.voice->DestroyVoice();
                 it = m_activeVoices.erase(it);
             } else {
                 ++it;
@@ -220,11 +240,14 @@ namespace NexusSDK {
             return AudioHandle(0, this);
         }
 
-        pSourceVoice->SetVolume(m_masterVolume);
+        auto it = m_channelVolumes.find(channel);
+        float channelVol = it != m_channelVolumes.end() ? it->second : 1.0f;
+        float vol = m_masterVolume * channelVol;
+        pSourceVoice->SetVolume(vol);
         pSourceVoice->Start(0);
         
         uint64_t id = m_nextVoiceId++;
-        m_activeVoices[id] = pSourceVoice;
+        m_activeVoices[id] = { pSourceVoice, channel };
         return AudioHandle(id, this);
     }
 }

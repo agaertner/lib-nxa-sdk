@@ -61,7 +61,8 @@ protected:
                 drawList->AddImage(
                     (ImTextureID)BackgroundTexture->Get(),
                     m_position,
-                    ImVec2(m_position.x + m_size.x, m_position.y + m_size.y)
+                    ImVec2(m_position.x + m_size.x, m_position.y + m_size.y),
+                    ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                 );
             }
 
@@ -73,7 +74,8 @@ protected:
                 drawList->AddImage(
                     (ImTextureID)tbTex->Get(),
                     m_position,
-                    ImVec2(m_position.x + m_size.x, m_position.y + TitlebarHeight)
+                    ImVec2(m_position.x + m_size.x, m_position.y + TitlebarHeight),
+                    ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                 );
             } else {
                 // Native fallback for titlebar: Draw a rect
@@ -123,7 +125,8 @@ protected:
                     drawList->AddImage(
                         (ImTextureID)resizeTex->Get(),
                         ImVec2(m_position.x + gripLocalPos.x, m_position.y + gripLocalPos.y),
-                        ImVec2(m_position.x + m_size.x, m_position.y + m_size.y)
+                        ImVec2(m_position.x + m_size.x, m_position.y + m_size.y),
+                        ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                     );
                 } else {
                     // Fallback to a simple drawn triangle

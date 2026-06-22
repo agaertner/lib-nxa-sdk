@@ -1,6 +1,6 @@
 #include "Menu.h"
 #include "../../../NexusSDK.h"
-#include "../../../nexus-sdk-resource.h"
+
 #include <cstdlib>
 
 namespace NexusSDK {
@@ -55,7 +55,7 @@ void Menu::OnRender() {
                 if (SelectedIndex != static_cast<int>(i)) {
                     SelectedIndex = static_cast<int>(i);
 
-                    const char* sounds[] = { IDR_WAV_MENUCLICK1, IDR_WAV_MENUCLICK2, IDR_WAV_MENUCLICK3, IDR_WAV_MENUCLICK4 };
+                    const char* sounds[] = { "NXA_WAV_MENUCLICK1", "NXA_WAV_MENUCLICK2", "NXA_WAV_MENUCLICK3", "NXA_WAV_MENUCLICK4" };
                     if (NexusSDK::Audio) {
                         NexusSDK::Audio->Play(sounds[std::rand() % 4]);
                     }

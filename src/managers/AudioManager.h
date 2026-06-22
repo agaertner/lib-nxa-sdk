@@ -38,15 +38,19 @@ namespace NexusSDK {
         uint64_t GetId() const { return m_id; }
     };
 
+
+
     class AudioManager {
     public:
         AudioManager(AddonAPI_t* api);
         ~AudioManager();
 
-        AudioHandle Play(const std::string& resourceName, bool loop = false);
+        AudioHandle Play(const std::string& resourceName, const std::string& channel = "UI", bool loop = false);
         void Stop(uint64_t voiceId);
         void StopAll();
-        void SetVolume(float volume);
+        void SetMasterVolume(float volume);
+        void SetChannelVolume(const std::string& channel, float volume);
+        float GetChannelVolume(const std::string& channel);
 
     private:
         AddonAPI_t* m_api;
@@ -55,11 +59,18 @@ namespace NexusSDK {
         bool m_initialized;
         bool m_coInitialized;
         float m_masterVolume = 1.0f;
+        std::unordered_map<std::string, float> m_channelVolumes;
         std::mutex m_mutex;
         
         std::unordered_map<std::string, AudioCacheEntry> m_cache;
         uint64_t m_nextVoiceId = 1;
-        std::unordered_map<uint64_t, IXAudio2SourceVoice*> m_activeVoices;
+
+        struct ActiveVoice {
+            IXAudio2SourceVoice* voice;
+            std::string channel;
+        };
+
+        std::unordered_map<uint64_t, ActiveVoice> m_activeVoices;
 
         AudioHandle PlayFromEntry(AudioCacheEntry& entry);
         bool FindChunk(const BYTE* data, size_t size, DWORD fourcc, DWORD& chunkSize, DWORD& chunkDataPosition);

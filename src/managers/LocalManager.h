@@ -21,6 +21,7 @@ namespace NexusSDK {
 
         void SetDefault(const std::string& defaultJsonString);
         void Save();
+        void LoadFromMemory(const std::string& jsonString);
 
         std::string GetString(const std::string& key, std::optional<int> language = std::nullopt);
         std::string GetString(const std::string& key, const std::vector<std::string>& args, std::optional<int> language = std::nullopt);

@@ -1,6 +1,7 @@
+#include "../../../nexus-sdk-resource.h"
 #include "Dropdown.h"
 #include "../../../NexusSDK.h"
-#include "../../../nexus-sdk-resource.h"
+
 
 #include <imgui/imgui.h>
 
@@ -37,7 +38,7 @@ namespace UI {
         if (ImGui::InvisibleButton(m_id.c_str(), ImVec2(width, height))) {
             if (!ImGui::IsPopupOpen(popupId.c_str())) {
                 ImGui::OpenPopup(popupId.c_str());
-                NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
+                NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
             } else {
                 ImGui::CloseCurrentPopup();
             }
@@ -50,15 +51,15 @@ namespace UI {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         
         // Background
-        drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), IM_COL32(10, 10, 10, 255));
+        drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(10, 10, 10, 255)));
         
         // Highlight tint
         if (isHighlighted) {
-            drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), IM_COL32(45, 37, 25, 255));
+            drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
         }
 
         // 1-pixel border
-        drawList->AddRect(pos, ImVec2(pos.x + width, pos.y + height), IM_COL32(80, 80, 80, 255), 0.0f, 0, 1.0f);
+        drawList->AddRect(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(80, 80, 80, 255)), 0.0f, 0, 1.0f);
 
         // Selected Text
         if (*SelectedIndex >= 0 && *SelectedIndex < OptionLabels.size() && OptionLabels[*SelectedIndex]) {
@@ -78,7 +79,7 @@ namespace UI {
         ImVec2 arrowMin = ImVec2(pos.x + width - arrowSize - 4.0f, pos.y + (height - arrowSize) / 2.0f);
         ImVec2 arrowMax = ImVec2(arrowMin.x + arrowSize, arrowMin.y + arrowSize);
         if (texArrow) {
-            drawList->AddImage((ImTextureID)texArrow->Resource, arrowMin, arrowMax);
+            drawList->AddImage((ImTextureID)texArrow->Resource, arrowMin, arrowMax, ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
         }
 
         // Popup logic
@@ -107,7 +108,7 @@ namespace UI {
                 if (itemClicked) {
                     *SelectedIndex = i;
                     if (OnSelectionChanged) OnSelectionChanged(*SelectedIndex);
-                    NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
+                    NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -115,7 +116,7 @@ namespace UI {
 
                 ImDrawList* pdl = ImGui::GetWindowDrawList();
                 if (shouldHighlight) {
-                    pdl->AddRectFilled(itemPos, ImVec2(itemPos.x + itemSize.x, itemPos.y + itemSize.y), IM_COL32(45, 37, 25, 255));
+                    pdl->AddRectFilled(itemPos, ImVec2(itemPos.x + itemSize.x, itemPos.y + itemSize.y), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
                 }
                 
                 ImGui::SetCursorScreenPos(ImVec2(itemPos.x + 8.0f, itemPos.y + (height - ImGui::GetFontSize()) / 2.0f));

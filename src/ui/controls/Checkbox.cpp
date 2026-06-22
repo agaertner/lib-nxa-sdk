@@ -1,6 +1,7 @@
+#include "../../../nexus-sdk-resource.h"
 #include "Checkbox.h"
 #include "../../../NexusSDK.h"
-#include "../../../nexus-sdk-resource.h"
+
 
 #include <imgui/imgui.h>
 
@@ -24,7 +25,7 @@ namespace UI {
             if (OnCheckedChanged) {
                 OnCheckedChanged(*Value);
             }
-            NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
+            NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
         }
 
         bool isHovered = ImGui::IsItemHovered();
@@ -40,9 +41,9 @@ namespace UI {
         ImVec2 drawPos = ImVec2(pos.x - (drawSize.x - interactSize.x) / 2.0f, pos.y - (drawSize.y - interactSize.y) / 2.0f);
 
         if (tex) {
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)tex->Resource, drawPos, ImVec2(drawPos.x + drawSize.x, drawPos.y + drawSize.y));
+            ImGui::GetWindowDrawList()->AddImage((ImTextureID)tex->Resource, drawPos, ImVec2(drawPos.x + drawSize.x, drawPos.y + drawSize.y), ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + interactSize.x, pos.y + interactSize.y), isChecked ? IM_COL32(0,255,0,255) : IM_COL32(255,0,0,255));
+            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + interactSize.x, pos.y + interactSize.y), isChecked ? ImGui::GetColorU32(IM_COL32(0,255,0,255)) : ImGui::GetColorU32(IM_COL32(255,0,0,255)));
         }
 
         if (TextLabel) {

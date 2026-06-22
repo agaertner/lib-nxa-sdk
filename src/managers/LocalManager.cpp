@@ -9,8 +9,10 @@ namespace NexusSDK {
     LocalManager::LocalManager(const std::filesystem::path& addonPath, AddonAPI_t* api)
         : m_api(api)
     {
-        m_filePath = addonPath / "localization.json";
-        Load(m_filePath);
+        if (!addonPath.empty()) {
+            m_filePath = addonPath / "localization.json";
+            Load(m_filePath);
+        }
     }
 
     void LocalManager::SetLanguageProvider(std::function<int()> provider) {
@@ -67,6 +69,8 @@ namespace NexusSDK {
     }
 
     void LocalManager::Save() {
+        if (m_filePath.empty()) return;
+        
         try {
             json j = m_strings;
             std::ofstream file(m_filePath);
@@ -75,6 +79,27 @@ namespace NexusSDK {
         catch (const std::exception&) {
             if (m_api) {
                 m_api->Log(ELogLevel::LOGL_WARNING, "LocalManager", "Failed to save localization.json.");
+            }
+        }
+    }
+
+    void LocalManager::LoadFromMemory(const std::string& jsonString) {
+        try {
+            json j = json::parse(jsonString);
+
+            for (auto& el : j.items()) {
+                std::string key = el.key();
+                for (auto& langEl : el.value().items()) {
+                    std::string langId = langEl.key();
+                    if (langEl.value().is_string()) {
+                        m_strings[key][langId] = langEl.value().get<std::string>();
+                    }
+                }
+            }
+        }
+        catch (const json::exception&) {
+            if (m_api) {
+                m_api->Log(ELogLevel::LOGL_WARNING, "LocalManager", "Failed to parse memory JSON.");
             }
         }
     }

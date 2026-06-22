@@ -155,20 +155,25 @@ void Label::OnRender() {
         for (const auto& token : tokens) {
             if (token == "\n") {
                 ImGui::NewLine();
+                ImGui::SetCursorPosX(startX);
                 isFirstTokenOnLine = true;
                 continue;
             }
 
-            ImVec2 size = ImGui::CalcTextSize(token.c_str());
+            if (!isFirstTokenOnLine) {
+                ImGui::SameLine(0.0f, 0.0f);
+            }
+
             float currentX = ImGui::GetCursorPosX();
+            ImVec2 size = ImGui::CalcTextSize(token.c_str());
             
             // Text Wrapping Logic
             if (WrapText && !isFirstTokenOnLine && (currentX + size.x > startX + maxWidth)) {
                 ImGui::NewLine();
+                ImGui::SetCursorPosX(startX);
                 isFirstTokenOnLine = true;
                 if (token == " ") continue; // Skip leading space on a new line
-            } else if (!isFirstTokenOnLine) {
-                ImGui::SameLine(0.0f, 0.0f);
+                currentX = ImGui::GetCursorPosX(); // Update for the new line
             }
 
             ImVec2 minPos = ImGui::GetCursorScreenPos();
