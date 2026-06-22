@@ -17,6 +17,68 @@ namespace NexusSDK {
         m_languageProvider = provider;
     }
 
+        void LocalManager::SetDefault(const std::string& defaultJsonString) {
+        try {
+            json defaultJson = json::parse(defaultJsonString);
+            bool modified = false;
+
+            bool isReadOnly = false;
+            std::error_code ec;
+            auto status = std::filesystem::status(m_filePath, ec);
+            if (std::filesystem::exists(status)) {
+                if ((status.permissions() & std::filesystem::perms::owner_write) == std::filesystem::perms::none) {
+                    isReadOnly = true;
+                }
+            }
+
+            for (auto& el : defaultJson.items()) {
+                std::string key = el.key();
+                for (auto& langEl : el.value().items()) {
+                    std::string langId = langEl.key();
+                    if (langEl.value().is_string()) {
+                        std::string newValue = langEl.value().get<std::string>();
+                        if (isReadOnly) {
+                            // Only add if it doesn't already exist
+                            if (m_strings[key].find(langId) == m_strings[key].end()) {
+                                m_strings[key][langId] = newValue;
+                                modified = true;
+                            }
+                        } else {
+                            // Overwrite existing or add new
+                            if (m_strings[key].find(langId) == m_strings[key].end() || m_strings[key][langId] != newValue) {
+                                m_strings[key][langId] = newValue;
+                                modified = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (modified) {
+                Save();
+            }
+        }
+        catch (const json::exception& e) {
+            if (m_api) {
+                m_api->Log(ELogLevel::LOGL_WARNING, "LocalManager", "Failed to parse default localization JSON.");
+                m_api->Log(ELogLevel::LOGL_WARNING, "LocalManager", e.what());
+            }
+        }
+    }
+
+    void LocalManager::Save() {
+        try {
+            json j = m_strings;
+            std::ofstream file(m_filePath);
+            file << j.dump(4);
+        }
+        catch (const std::exception&) {
+            if (m_api) {
+                m_api->Log(ELogLevel::LOGL_WARNING, "LocalManager", "Failed to save localization.json.");
+            }
+        }
+    }
+
     void LocalManager::Load(const std::filesystem::path& filePath)
     {
         if (!std::filesystem::exists(filePath)) {

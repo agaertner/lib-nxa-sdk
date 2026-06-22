@@ -1,17 +1,27 @@
 #include "../submodules/lib-nxa-sdk/nexus-sdk-resource.h"
 
 // RCDATA is used for raw binary files (like PNGs)
-IDB_TRACKBAR_BG             RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/154968.png"
-IDB_TRACKBAR_ATLAS_BG       RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-track.png"
-IDB_TRACKBAR_NUB            RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-nub.png"
+NXA_TRACKBAR_BG             RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/154968.png"
+NXA_TRACKBAR_ATLAS_BG       RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-track.png"
+NXA_TRACKBAR_NUB            RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-nub.png"
 
-IDB_CHECKBOX_UNCHECKED          RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked.png"
-IDB_CHECKBOX_UNCHECKED_ACTIVE   RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked-active.png"
-IDB_CHECKBOX_UNCHECKED_DISABLED RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked-disabled.png"
-IDB_CHECKBOX_CHECKED            RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked.png"
-IDB_CHECKBOX_CHECKED_ACTIVE     RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-active.png"
-IDB_CHECKBOX_CHECKED_DISABLED   RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-disabled.png"
+NXA_CB_UNCHECKED          RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked.png"
+NXA_CB_UNCHECKED_ACTIVE   RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked-active.png"
+NXA_CB_UNCHECKED_DISABLED RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-unchecked-disabled.png"
+NXA_CB_CHECKED            RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked.png"
+NXA_CB_CHECKED_ACTIVE     RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-active.png"
+NXA_CB_CHECKED_DISABLED   RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/checkbox/cb-checked-disabled.png"
 
-IDR_AUDIO_CLICK WAVE "../submodules/lib-nxa-sdk/ref/audio/button-click.wav"
+NXA_AUDIO_CLICK WAVE "../submodules/lib-nxa-sdk/ref/audio/button-click.wav"
 
-IDB_DROPDOWN_ARROW RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/dropdown/156057.png"
+NXA_DD_ARROW RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/dropdown/156057.png"
+
+NXA_BUTTON_STATES RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/button/button-states.jpg"
+NXA_BUTTON_BORDER RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/button/button-border.png"
+
+NXA_WAV_MENUCLICK1 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-1.wav"
+NXA_WAV_MENUCLICK2 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-2.wav"
+NXA_WAV_MENUCLICK3 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-3.wav"
+NXA_WAV_MENUCLICK4 WAVE "../submodules/lib-nxa-sdk/ref/audio/menu-click-4.wav"
+
+NXA_FONT_MENOMONIA RCDATA "../submodules/lib-nxa-sdk/ref/fonts/menomonia.ttf"

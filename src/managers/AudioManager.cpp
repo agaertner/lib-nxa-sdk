@@ -111,6 +111,8 @@ namespace NexusSDK {
         }
     }
 
+
+
     UINT32 AudioManager::TrimSilence(WAVEFORMATEX* format, const BYTE* data, DWORD size) {
         if (!format || !data || size == 0) return 0;
         
@@ -137,7 +139,7 @@ namespace NexusSDK {
         return 0;
     }
 
-    AudioHandle AudioManager::Play(int resourceId, bool loop) {
+    AudioHandle AudioManager::Play(const std::string& resourceName, bool loop) {
         if (!m_initialized) return AudioHandle(0, this);
         std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -154,14 +156,14 @@ namespace NexusSDK {
         }
 
         AudioCacheEntry entry = {};
-        auto cacheIt = m_cache.find(resourceId);
+        auto cacheIt = m_cache.find(resourceName);
         if (cacheIt != m_cache.end()) {
             entry = cacheIt->second;
         } else {
             HMODULE hModule = GetCurrentModuleHandle();
             if (!hModule) return AudioHandle(0, this);
 
-            HRSRC hRes = FindResource(hModule, MAKEINTRESOURCE(resourceId), TEXT("WAVE"));
+            HRSRC hRes = FindResourceA(hModule, resourceName.c_str(), "WAVE");
             if (!hRes) return AudioHandle(0, this);
 
             HGLOBAL hMem = LoadResource(hModule, hRes);
@@ -196,7 +198,7 @@ namespace NexusSDK {
             entry.dataSize = dataChunkSize;
             entry.playBegin = TrimSilence(pwfx, entry.data, entry.dataSize);
 
-            m_cache[resourceId] = entry;
+            m_cache[resourceName] = entry;
         }
 
         IXAudio2SourceVoice* pSourceVoice;

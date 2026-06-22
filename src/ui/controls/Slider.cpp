@@ -1,7 +1,7 @@
 #include "Slider.h"
 #include "../../../NexusSDK.h"
 #include "../../../nexus-sdk-resource.h"
-#include "../UIContext.h"
+
 #include <imgui/imgui.h>
 #include <algorithm>
 #include <sstream>
@@ -10,22 +10,12 @@
 namespace NexusSDK {
 namespace UI {
 
-    std::shared_ptr<AsyncTexture> Slider::s_texTrack;
-    std::shared_ptr<AsyncTexture> Slider::s_texNub;
 
-    void Slider::InitializeTextures() {
-        if (!s_texTrack && ContextAPI) {
-            s_texTrack = std::make_shared<AsyncTexture>("tb-track", IDB_TRACKBAR_ATLAS_BG, ContextAPI, ContextModule);
-            s_texTrack->Load();
-            s_texNub = std::make_shared<AsyncTexture>("tb-nub", IDB_TRACKBAR_NUB, ContextAPI, ContextModule);
-            s_texNub->Load();
-        }
-    }
 
     void Slider::OnRender() {
         if (!Value) return;
 
-        InitializeTextures();
+
 
         float height = 24.0f;
 
@@ -64,7 +54,7 @@ namespace UI {
         }
 
         // Draw track
-        Texture_t* texTrack = s_texTrack ? s_texTrack->Get() : nullptr;
+        Texture_t* texTrack = NexusSDK::Content->GetTexture(IDB_TRACKBAR_ATLAS_BG);
         if (texTrack) {
             float trackHeight = 16.0f; // Original texture height
             float capW = 4.0f;
@@ -90,7 +80,7 @@ namespace UI {
         }
 
         // Draw nub
-        Texture_t* texNub = s_texNub ? s_texNub->Get() : nullptr;
+        Texture_t* texNub = NexusSDK::Content->GetTexture(IDB_TRACKBAR_NUB);
         float percent = std::clamp((*Value - Min) / (Max - Min), 0.0f, 1.0f);
         float nubCenter = pos.x + boundW + (nubSize / 2.0f) + (usableWidth * percent);
         ImVec2 nubMin = ImVec2(nubCenter - nubSize / 2.0f, pos.y + (height - nubSize) / 2.0f);

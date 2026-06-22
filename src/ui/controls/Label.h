@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "ControlBase.h"
 #include "../../utils/AsyncFont.h"
@@ -41,6 +41,9 @@ public:
 
     // Markup Parsing
     void SetMarkupText(const std::string& markupText);
+
+    // Layout
+    ImVec2 CalcSize();
 
     // Link Management
     void RegisterLink(const std::string& linkID, std::function<void()> callback);

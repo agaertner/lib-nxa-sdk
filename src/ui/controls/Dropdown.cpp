@@ -1,25 +1,18 @@
 #include "Dropdown.h"
 #include "../../../NexusSDK.h"
 #include "../../../nexus-sdk-resource.h"
-#include "../UIContext.h"
+
 #include <imgui/imgui.h>
 
 namespace NexusSDK {
 namespace UI {
 
-    std::shared_ptr<AsyncTexture> Dropdown::s_texArrow;
 
-    void Dropdown::InitializeTextures() {
-        if (!s_texArrow && ContextAPI) {
-            s_texArrow = std::make_shared<AsyncTexture>("dd-arrow", IDB_DROPDOWN_ARROW, ContextAPI, ContextModule);
-            s_texArrow->Load();
-        }
-    }
 
     void Dropdown::OnRender() {
         if (!SelectedIndex) return;
 
-        InitializeTextures();
+
 
         float height = ImGui::GetTextLineHeightWithSpacing() + 4.0f;
 
@@ -44,9 +37,7 @@ namespace UI {
         if (ImGui::InvisibleButton(m_id.c_str(), ImVec2(width, height))) {
             if (!ImGui::IsPopupOpen(popupId.c_str())) {
                 ImGui::OpenPopup(popupId.c_str());
-                if (ContextAudio) {
-                    ContextAudio->Play(IDR_AUDIO_CLICK);
-                }
+                NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
             } else {
                 ImGui::CloseCurrentPopup();
             }
@@ -82,7 +73,7 @@ namespace UI {
         }
 
         // Arrow
-        Texture_t* texArrow = s_texArrow ? s_texArrow->Get() : nullptr;
+        Texture_t* texArrow = NexusSDK::Content->GetTexture(IDB_DROPDOWN_ARROW);
         float arrowSize = 16.0f;
         ImVec2 arrowMin = ImVec2(pos.x + width - arrowSize - 4.0f, pos.y + (height - arrowSize) / 2.0f);
         ImVec2 arrowMax = ImVec2(arrowMin.x + arrowSize, arrowMin.y + arrowSize);
@@ -116,9 +107,7 @@ namespace UI {
                 if (itemClicked) {
                     *SelectedIndex = i;
                     if (OnSelectionChanged) OnSelectionChanged(*SelectedIndex);
-                    if (ContextAudio) {
-                        ContextAudio->Play(IDR_AUDIO_CLICK);
-                    }
+                    NexusSDK::Audio->Play(IDR_AUDIO_CLICK);
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -142,6 +131,7 @@ namespace UI {
 
                 ImGui::PopStyleColor();
 
+                ImGui::SetCursorScreenPos(ImVec2(itemPos.x, itemPos.y + height));
                 ImGui::PopID();
             }
             ImGui::EndPopup();
@@ -149,6 +139,10 @@ namespace UI {
         
         ImGui::PopStyleVar(4);
         ImGui::PopStyleColor(2);
+
+        // Restore layout bounds so ImGui::SameLine() works on the dropdown box
+        ImGui::SetCursorScreenPos(pos);
+        ImGui::Dummy(ImVec2(width, height));
     }
 
 }

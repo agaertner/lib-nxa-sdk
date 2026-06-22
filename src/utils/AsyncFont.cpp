@@ -1,4 +1,4 @@
-﻿#include "AsyncFont.h"
+#include "AsyncFont.h"
 #include <windows.h>
 #include "imgui/imgui.h"
 
@@ -12,8 +12,8 @@ namespace NexusSDK {
         }
     }
 
-    AsyncFont::AsyncFont(const std::string& identifier, int resourceID, float fontSize, AddonAPI_t* api, HMODULE moduleHandle)
-        : m_identifier(identifier), m_resourceID(resourceID), m_fontSize(fontSize), m_api(api), m_moduleHandle(moduleHandle), m_isLoadRequested(false)
+    AsyncFont::AsyncFont(const std::string& identifier, const std::string& resourceName, float fontSize, AddonAPI_t* api, HMODULE moduleHandle)
+        : m_identifier(identifier), m_resourceName(resourceName), m_fontSize(fontSize), m_api(api), m_moduleHandle(moduleHandle), m_isLoadRequested(false)
     {
     }
 
@@ -29,7 +29,7 @@ namespace NexusSDK {
             return;
         }
 
-        HRSRC hResource = FindResource(m_moduleHandle, MAKEINTRESOURCE(m_resourceID), RT_RCDATA);
+        HRSRC hResource = FindResourceA(m_moduleHandle, m_resourceName.c_str(), (LPCSTR)RT_RCDATA);
         if (hResource) {
             HGLOBAL hMemory = LoadResource(m_moduleHandle, hResource);
             if (hMemory) {

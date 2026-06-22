@@ -43,7 +43,7 @@ namespace NexusSDK {
         AudioManager(AddonAPI_t* api);
         ~AudioManager();
 
-        AudioHandle Play(int resourceId, bool loop = false);
+        AudioHandle Play(const std::string& resourceName, bool loop = false);
         void Stop(uint64_t voiceId);
         void StopAll();
         void SetVolume(float volume);
@@ -57,10 +57,11 @@ namespace NexusSDK {
         float m_masterVolume = 1.0f;
         std::mutex m_mutex;
         
-        std::unordered_map<int, AudioCacheEntry> m_cache;
+        std::unordered_map<std::string, AudioCacheEntry> m_cache;
         uint64_t m_nextVoiceId = 1;
         std::unordered_map<uint64_t, IXAudio2SourceVoice*> m_activeVoices;
 
+        AudioHandle PlayFromEntry(AudioCacheEntry& entry);
         bool FindChunk(const BYTE* data, size_t size, DWORD fourcc, DWORD& chunkSize, DWORD& chunkDataPosition);
         UINT32 TrimSilence(WAVEFORMATEX* format, const BYTE* data, DWORD size);
     };

@@ -36,9 +36,7 @@ namespace UI {
 
         void OnRender() override;
 
-    private:
-        static std::shared_ptr<AsyncTexture> s_texArrow;
-        static void InitializeTextures();
+
     };
 
 }

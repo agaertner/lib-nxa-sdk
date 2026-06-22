@@ -1,17 +1,19 @@
-﻿#include "AsyncTexture.h"
+#include "AsyncTexture.h"
 #include <windows.h>
 
 namespace NexusSDK {
 
-    AsyncTexture::AsyncTexture(const std::string& identifier, int resourceID, AddonAPI_t* api, HMODULE moduleHandle)
-        : m_identifier(identifier), m_resourceID(resourceID), m_api(api), m_moduleHandle(moduleHandle), m_texture(nullptr), m_isLoadRequested(false)
+    AsyncTexture::AsyncTexture(const std::string& identifier, const std::string& resourceName, AddonAPI_t* api, HMODULE moduleHandle)
+        : m_identifier(identifier), m_resourceName(resourceName),
+          m_api(api), m_moduleHandle(moduleHandle), m_texture(nullptr), m_isLoadRequested(false)
     {
     }
 
     void AsyncTexture::Load() {
         if (m_isLoadRequested) return;
 
-        HRSRC hRes = FindResource(m_moduleHandle, MAKEINTRESOURCE(m_resourceID), RT_RCDATA);
+        HRSRC hRes = FindResourceA(m_moduleHandle, m_resourceName.c_str(), (LPCSTR)RT_RCDATA);
+
         if (hRes) {
             HGLOBAL hMem = LoadResource(m_moduleHandle, hRes);
             void* pData = LockResource(hMem);
@@ -28,7 +30,6 @@ namespace NexusSDK {
             return nullptr;
         }
 
-        // Try fetching the texture again if it was loading asynchronously
         if (!m_texture || !m_texture->Resource) {
             m_texture = m_api->Textures_Get(m_identifier.c_str());
         }
@@ -39,8 +40,6 @@ namespace NexusSDK {
     void AsyncTexture::Dispose() {
         m_texture = nullptr;
         m_isLoadRequested = false;
-        // Note: Nexus API currently lacks a Textures_Release method.
-        // Memory is managed by Nexus/DirectX and generally persists or is cleared on exit.
     }
 
 }

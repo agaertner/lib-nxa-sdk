@@ -28,10 +28,7 @@ protected:
     virtual void OnRender() override;
 
 private:
-    static std::shared_ptr<AsyncTexture> s_texTrack;
-    static std::shared_ptr<AsyncTexture> s_texNub;
 
-    static void InitializeTextures();
 };
 
 } // namespace UI

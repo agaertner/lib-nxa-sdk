@@ -19,6 +19,9 @@ namespace NexusSDK {
 
         void SetLanguageProvider(std::function<int()> provider);
 
+        void SetDefault(const std::string& defaultJsonString);
+        void Save();
+
         std::string GetString(const std::string& key, std::optional<int> language = std::nullopt);
         std::string GetString(const std::string& key, const std::vector<std::string>& args, std::optional<int> language = std::nullopt);
         std::string GetIsoCode(int langId);

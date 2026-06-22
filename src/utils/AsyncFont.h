@@ -1,4 +1,4 @@
-﻿#ifndef ASYNCFONT_H
+#ifndef ASYNCFONT_H
 #define ASYNCFONT_H
 
 #include "Defines.h"
@@ -8,7 +8,7 @@
 namespace NexusSDK {
     class AsyncFont {
     public:
-        AsyncFont(const std::string& identifier, int resourceID, float fontSize, AddonAPI_t* api, HMODULE moduleHandle);
+        AsyncFont(const std::string& identifier, const std::string& resourceName, float fontSize, AddonAPI_t* api, HMODULE moduleHandle);
         ~AsyncFont();
 
         // Requests Nexus to load the font from the resource
@@ -22,7 +22,7 @@ namespace NexusSDK {
 
     private:
         std::string m_identifier;
-        int m_resourceID;
+        std::string m_resourceName;
         float m_fontSize;
         AddonAPI_t* m_api;
         HMODULE m_moduleHandle;

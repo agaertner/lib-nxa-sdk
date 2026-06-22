@@ -1,4 +1,4 @@
-﻿#include "Label.h"
+#include "Label.h"
 #include <sstream>
 
 namespace NexusSDK {
@@ -91,6 +91,32 @@ void Label::SetMarkupText(const std::string& markupText) {
         i++;
     }
     pushPart();
+}
+
+ImVec2 Label::CalcSize() {
+    float width = 0.0f;
+    float height = 0.0f;
+    
+    // Quick approximation for non-wrapped text
+    for (const auto& part : m_parts) {
+        bool pushedFont = false;
+        if (part.Font && part.Font->Get()) {
+            ImGui::PushFont((ImFont*)part.Font->Get());
+            pushedFont = true;
+        } else if (Font && Font->Get()) {
+            ImGui::PushFont((ImFont*)Font->Get());
+            pushedFont = true;
+        }
+
+        ImVec2 partSize = ImGui::CalcTextSize(part.Text.c_str());
+        width += partSize.x;
+        height = (std::max)(height, partSize.y);
+
+        if (pushedFont) {
+            ImGui::PopFont();
+        }
+    }
+    return ImVec2(width, height);
 }
 
 void Label::OnRender() {
