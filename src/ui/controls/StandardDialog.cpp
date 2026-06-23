@@ -56,7 +56,6 @@ void StandardDialog::Show(const std::string& text, DialogIcon sysIcon, std::vect
 
 void StandardDialog::Close() {
     SetVisible(false);
-    ImGui::CloseCurrentPopup();
     
     if (auto parent = GetParent()) {
         parent->RemoveChild(shared_from_this());
@@ -88,34 +87,25 @@ void StandardDialog::CalculateLayout(float scale) {
 void StandardDialog::Draw(const Rectangle& bounds, float scale) {
     if (!m_visible) return;
 
-    // Create an invisible, non-interactive host window for the modal
-    ImGui::SetNextWindowPos(ImVec2(0,0));
-    ImGui::SetNextWindowSize(ImVec2(0,0));
-    if (ImGui::Begin(m_id.c_str(), nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
-        
-        if (!m_wasOpened) {
-            ImGui::OpenPopup((m_id + "_Popup").c_str());
-            m_wasOpened = true;
-        }
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    // Center on screen
+    ImVec2 center = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+    ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(m_size.x * scale, 0)); // Let height auto-size
 
-        ImGui::SetNextWindowSize(ImVec2(m_size.x * scale, 0)); // Let height auto-size
-        if (ImGui::BeginPopupModal((m_id + "_Popup").c_str(), &m_visible, flags)) {
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(2);
+    if (ImGui::Begin((m_id + "_Dialog").c_str(), &m_visible, flags)) {
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(2);
 
-            OnDraw(bounds, scale);
-
-            ImGui::EndPopup();
-        } else {
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(2);
-        }
+        OnDraw(bounds, scale);
+    } else {
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(2);
     }
     ImGui::End();
 }
@@ -233,97 +223,9 @@ void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
                 childBounds.Width = m_buttonWidth * scale;
                 childBounds.Height = m_buttonHeight * scale;
 
+                // Standard clean rendering. Button handles its own state internally now.
                 ImGui::SetCursorScreenPos(ImVec2(childBounds.X, childBounds.Y));
-                
-                // We inline the interaction and rendering to bypass the bizarre ControlBase Modal clipping anomaly
-                bool isHovered = false;
-                bool isClicked = ImGui::InvisibleButton(("##InvBtn" + btn->GetID()).c_str(), ImVec2(childBounds.Width, childBounds.Height));
-                
-                if (ImGui::IsItemHovered()) {
-                    isHovered = true;
-                }
-
-                if (isClicked) {
-                    if (btn->OnClick) btn->OnClick();
-                    NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
-                }
-
-                // Force anim state into the button so it can track time
-                btn->ForceHover = isHovered;
-                float dt = ImGui::GetIO().DeltaTime;
-                
-                // Directly manage a local animation state for immediate rendering
-                static std::map<std::string, float> s_animStates;
-                std::string btnKey = m_id + "_" + btn->GetID();
-                if (isHovered) {
-                    s_animStates[btnKey] += dt * (8.0f / 0.25f);
-                } else {
-                    s_animStates[btnKey] -= dt * (8.0f / 0.25f);
-                }
-                if (s_animStates[btnKey] > 8.0f) s_animStates[btnKey] = 8.0f;
-                if (s_animStates[btnKey] < 0.0f) s_animStates[btnKey] = 0.0f;
-
-                int frame = static_cast<int>(s_animStates[btnKey]);
-                if (frame >= 8) frame = 7;
-                if (ImGui::IsItemActive() && isHovered) {
-                    frame = 7; // Pressed state
-                }
-
-                ImDrawList* drawList = ImGui::GetWindowDrawList();
-                Texture_t* texStates = NexusSDK::Content->GetTexture(IDB_BUTTON_STATES);
-                Texture_t* texBorder = NexusSDK::Content->GetTexture(IDB_BUTTON_BORDER);
-
-                ImVec2 pos = ImVec2(childBounds.X, childBounds.Y);
-                ImVec2 size = ImVec2(childBounds.Width, childBounds.Height);
-
-                if (texStates) {
-                    float totalWidth = static_cast<float>(texStates->Width);
-                    float totalHeight = static_cast<float>(texStates->Height);
-                    float ATLAS_SPRITE_WIDTH = 350.0f;
-                    float ATLAS_SPRITE_HEIGHT = 20.0f;
-                    
-                    float uv0x = (frame * ATLAS_SPRITE_WIDTH) / totalWidth;
-                    float uv0y = 0.0f;
-                    float uv1x = ((frame + 1) * ATLAS_SPRITE_WIDTH) / totalWidth;
-                    float uv1y = ATLAS_SPRITE_HEIGHT / totalHeight;
-
-                    drawList->AddImage((ImTextureID)texStates->Resource, 
-                                       ImVec2(pos.x + 3, pos.y + 3), 
-                                       ImVec2(pos.x + size.x - 3, pos.y + size.y - 2), 
-                                       ImVec2(uv0x, uv0y), ImVec2(uv1x, uv1y), ImGui::GetColorU32(IM_COL32_WHITE));
-                }
-
-                if (texBorder) {
-                    float bw = 4.0f; float bh = 4.0f;
-                    // Top
-                    drawList->AddImage((ImTextureID)texBorder->Resource,
-                                       ImVec2(pos.x + 2, pos.y), ImVec2(pos.x + size.x - 3, pos.y + 4),
-                                       ImVec2(0/bw, 0/bh), ImVec2(1/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
-                    // Right
-                    drawList->AddImage((ImTextureID)texBorder->Resource,
-                                       ImVec2(pos.x + size.x - 4, pos.y + 2), ImVec2(pos.x + size.x, pos.y + size.y - 1),
-                                       ImVec2(0/bw, 1/bh), ImVec2(4/bw, 2/bh), ImGui::GetColorU32(IM_COL32_WHITE));
-                    // Bottom
-                    drawList->AddImage((ImTextureID)texBorder->Resource,
-                                       ImVec2(pos.x + 3, pos.y + size.y - 4), ImVec2(pos.x + size.x - 3, pos.y + size.y),
-                                       ImVec2(1/bw, 0/bh), ImVec2(2/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
-                    // Left
-                    drawList->AddImage((ImTextureID)texBorder->Resource,
-                                       ImVec2(pos.x, pos.y + 2), ImVec2(pos.x + 4, pos.y + size.y - 1),
-                                       ImVec2(0/bw, 3/bh), ImVec2(4/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
-                }
-
-                if (btn->TextLabel) {
-                    ImVec2 textSize = btn->TextLabel->CalcSize();
-                    float textX = pos.x + (size.x - textSize.x) / 2.0f;
-                    float textY = pos.y + (size.y - textSize.y) / 2.0f;
-
-                    Rectangle textBounds;
-                    textBounds.X = textX; textBounds.Y = textY;
-                    textBounds.Width = textSize.x; textBounds.Height = textSize.y;
-
-                    btn->TextLabel->Draw(textBounds, scale);
-                }
+                btn->Draw(childBounds, scale);
 
                 // Restore cursor for next button
                 ImGui::SetCursorScreenPos(ImVec2(childBounds.X + childBounds.Width + 3.0f * scale, childBounds.Y));

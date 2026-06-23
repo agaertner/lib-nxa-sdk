@@ -27,6 +27,7 @@ struct LabelPart {
     // Decoration
     bool IsUnderlined = false;
     bool IsStrikeThrough = false;
+    bool IsBold = false;
 };
 
 class Label : public ControlBase {

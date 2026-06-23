@@ -15,11 +15,25 @@ namespace UI {
         m_id = id;
         TextLabel = std::make_shared<Label>("<c=#000000>" + text + "</c>");
         TextLabel->WrapText = false; // Buttons usually don't wrap
+        
+        // Button handles input natively via InvisibleButton now, ignore ControlBase events
+        InputCapture = CaptureType::None;
     }
 
     void Button::OnDraw(const Rectangle& bounds, float scale) {
         ImVec2 pos = bounds.GetMin();
         ImVec2 size = ImVec2(bounds.Width, bounds.Height);
+
+        // Natively intercept input using InvisibleButton to completely bypass ControlBase/Modal anomalies
+        ImGui::SetCursorScreenPos(pos);
+        bool isClicked = ImGui::InvisibleButton(("##inv_" + m_id).c_str(), size);
+        bool isHovered = ImGui::IsItemHovered();
+        bool isActive = ImGui::IsItemActive();
+
+        m_isHovered = isHovered;
+        if (isClicked) {
+            ForceClick(); // Reuses our existing force click method
+        }
 
         float dt = ImGui::GetIO().DeltaTime;
         if (m_isHovered || ForceHover) {
@@ -34,7 +48,7 @@ namespace UI {
         int frame = static_cast<int>(m_animState);
         if (frame >= ANIM_FRAME_COUNT) frame = ANIM_FRAME_COUNT - 1;
 
-        if (m_isPressed) {
+        if (isActive || m_isPressed) {
             frame = ANIM_FRAME_COUNT - 1; // Last frame is fully pressed
         }
 
@@ -117,6 +131,11 @@ namespace UI {
     void Button::DoMouseLeft(const MouseEventArgs& args) {
         ControlBase::DoMouseLeft(args);
         m_isPressed = false;
+    }
+
+    void Button::ForceClick() {
+        if (OnClick) OnClick();
+        NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
     }
 
 } // namespace UI

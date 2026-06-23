@@ -21,6 +21,7 @@ public:
     float Height = 26.0f;
 
     bool ForceHover = false;
+    void ForceClick();
 
 protected:
     virtual void OnDraw(const Rectangle& bounds, float scale) override;

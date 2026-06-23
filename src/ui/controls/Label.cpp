@@ -38,6 +38,7 @@ void Label::SetMarkupText(const std::string& markupText) {
     ImVec4 currentColor = {1, 1, 1, 1};
     bool isLink = false;
     std::string currentLinkID = "";
+    bool isBold = false;
     
     std::string buffer = "";
 
@@ -49,6 +50,7 @@ void Label::SetMarkupText(const std::string& markupText) {
             part.TextColor = currentColor;
             part.IsLink = isLink;
             part.LinkID = currentLinkID;
+            part.IsBold = isBold;
             if (isLink) part.IsUnderlined = true;
             AddPart(part);
             buffer.clear();
@@ -82,6 +84,16 @@ void Label::SetMarkupText(const std::string& markupText) {
                 } else if (tag == "/link") {
                     pushPart();
                     isLink = false;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "b") {
+                    pushPart();
+                    isBold = true;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/b") {
+                    pushPart();
+                    isBold = false;
                     i = endTag + 1;
                     continue;
                 }
@@ -197,6 +209,11 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
             }
 
             // Draw the text
+            if (part.IsBold) {
+                ImVec2 p = ImGui::GetCursorScreenPos();
+                ImGui::GetWindowDrawList()->AddText(ImVec2(p.x + 1.0f, p.y), ImGui::ColorConvertFloat4ToU32(renderColor), token.c_str());
+            }
+
             if (part.HasColor || part.IsLink) {
                 ImGui::TextColored(renderColor, "%s", token.c_str());
             } else {

@@ -50,19 +50,7 @@ void Viewport::Render(float uiScale) {
         ImGuiWindowFlags_NoBringToFrontOnFocus | 
         ImGuiWindowFlags_NoBackground;
 
-    // Dynamically apply NoInputs if no children require input capture
-    bool requiresInput = false;
-    auto children = s_instance->GetChildren();
-    for (auto& child : children) {
-        if (child->InputCapture != CaptureType::None) {
-            requiresInput = true;
-            break;
-        }
-    }
-
-    if (!requiresInput) {
-        flags |= ImGuiWindowFlags_NoInputs;
-    }
+    flags |= ImGuiWindowFlags_NoInputs;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -75,6 +63,7 @@ void Viewport::Render(float uiScale) {
         clientBounds.Height = displaySize.y;
 
         // Iterate a copy to avoid iterator invalidation if a child removes itself
+        auto children = s_instance->GetChildren();
         for (auto& child : children) {
             child->Draw(clientBounds, uiScale);
         }
