@@ -43,7 +43,7 @@ public:
     void SetMarkupText(const std::string& markupText);
 
     // Layout
-    ImVec2 CalcSize();
+    ImVec2 CalcSize() const;
 
     // Link Management
     void RegisterLink(const std::string& linkID, std::function<void()> callback);
@@ -53,7 +53,13 @@ public:
     std::shared_ptr<AsyncFont> Font = nullptr;
 
 protected:
-    virtual void OnRender() override;
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+
+    virtual ImVec2 GetAutoSize(float scale) const override {
+        ImVec2 size = CalcSize();
+        if (size.y == 0.0f) size.y = 16.0f * scale;
+        return ImVec2(size.x / scale, size.y / scale);
+    }
 
 private:
     std::vector<LabelPart> m_parts;

@@ -41,7 +41,7 @@ public:
     }
 
 protected:
-    virtual void OnRender() override;
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
 };
 
 } // namespace UI

@@ -17,24 +17,12 @@ namespace UI {
         TextLabel->WrapText = false; // Buttons usually don't wrap
     }
 
-    void Button::OnRender() {
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-        ImVec2 size = ImVec2(Width, Height);
-
-        bool isHovered = false;
-        bool isClicked = ImGui::InvisibleButton(m_id.c_str(), size);
-        
-        if (ImGui::IsItemHovered()) {
-            isHovered = true;
-        }
-
-        if (isClicked) {
-            if (OnClick) OnClick();
-            NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
-        }
+    void Button::OnDraw(const Rectangle& bounds, float scale) {
+        ImVec2 pos = bounds.GetMin();
+        ImVec2 size = ImVec2(bounds.Width, bounds.Height);
 
         float dt = ImGui::GetIO().DeltaTime;
-        if (isHovered) {
+        if (m_isHovered || ForceHover) {
             m_animState += dt * (static_cast<float>(ANIM_FRAME_COUNT) / ANIM_FRAME_TIME);
         } else {
             m_animState -= dt * (static_cast<float>(ANIM_FRAME_COUNT) / ANIM_FRAME_TIME);
@@ -44,7 +32,11 @@ namespace UI {
         if (m_animState < 0.0f) m_animState = 0.0f;
 
         int frame = static_cast<int>(m_animState);
-        if (frame > ANIM_FRAME_COUNT) frame = ANIM_FRAME_COUNT;
+        if (frame >= ANIM_FRAME_COUNT) frame = ANIM_FRAME_COUNT - 1;
+
+        if (m_isPressed) {
+            frame = ANIM_FRAME_COUNT - 1; // Last frame is fully pressed
+        }
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
 
@@ -98,13 +90,33 @@ namespace UI {
             float textX = pos.x + (size.x - textSize.x) / 2.0f;
             float textY = pos.y + (size.y - textSize.y) / 2.0f;
 
-            ImGui::SetCursorScreenPos(ImVec2(textX, textY));
-            TextLabel->Render();
-        }
+            Rectangle textBounds;
+            textBounds.X = textX;
+            textBounds.Y = textY;
+            textBounds.Width = textSize.x;
+            textBounds.Height = textSize.y;
 
-        // Restore layout bounds so ImGui::SameLine works correctly
-        ImGui::SetCursorScreenPos(pos);
-        ImGui::Dummy(size);
+            TextLabel->Draw(textBounds, scale);
+        }
+    }
+
+    void Button::DoMouseLeftDown(const MouseEventArgs& args) {
+        ControlBase::DoMouseLeftDown(args);
+        m_isPressed = true;
+    }
+
+    void Button::DoMouseLeftUp(const MouseEventArgs& args) {
+        ControlBase::DoMouseLeftUp(args);
+        if (m_isPressed && m_isHovered) {
+            if (OnClick) OnClick();
+            NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
+        }
+        m_isPressed = false;
+    }
+
+    void Button::DoMouseLeft(const MouseEventArgs& args) {
+        ControlBase::DoMouseLeft(args);
+        m_isPressed = false;
     }
 
 } // namespace UI

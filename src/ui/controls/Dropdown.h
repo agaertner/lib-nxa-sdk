@@ -26,6 +26,7 @@ namespace UI {
             : m_id(id), SelectedIndex(selectedIndex), Options(options) {
             if (text && text[0] != '\0') {
                 TextLabel = std::make_shared<Label>(text);
+                TextLabel->WrapText = false;
             }
             for (const auto& opt : options) {
                 auto lbl = std::make_shared<Label>(opt);
@@ -34,7 +35,17 @@ namespace UI {
             }
         }
 
-        void OnRender() override;
+        void OnDraw(const Rectangle& bounds, float scale) override;
+
+        virtual ImVec2 GetAutoSize(float scale) const override {
+            ImVec2 size(150.0f, ImGui::GetTextLineHeightWithSpacing() + 4.0f);
+            if (TextLabel) {
+                float spacing = 8.0f;
+                ImVec2 textSize = TextLabel->CalcSize();
+                size.x += (textSize.x / scale) + spacing;
+            }
+            return size;
+        }
 
 
     };

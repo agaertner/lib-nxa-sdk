@@ -10,15 +10,14 @@ namespace UI {
 
 
 
-    void Checkbox::OnRender() {
+    void Checkbox::OnDraw(const Rectangle& bounds, float scale) {
         if (!Value) return;
 
+        ImVec2 interactSize = ImVec2(16.0f * scale, 16.0f * scale); 
+        ImVec2 drawSize = ImVec2(32.0f * scale, 32.0f * scale); 
 
-
-        ImVec2 interactSize = ImVec2(16, 16); 
-        ImVec2 drawSize = ImVec2(32, 32); 
-
-        ImVec2 pos = ImGui::GetCursorScreenPos();
+        ImVec2 pos = bounds.GetMin();
+        ImGui::SetCursorScreenPos(pos);
 
         if (ImGui::InvisibleButton(m_id.c_str(), interactSize)) {
             *Value = !(*Value);
@@ -47,11 +46,17 @@ namespace UI {
         }
 
         if (TextLabel) {
-            ImGui::SameLine(0.0f, 4.0f); // Even closer spacing
-            float currentY = ImGui::GetCursorPosY();
-            float offset = (interactSize.y - ImGui::GetFontSize()) / 2.0f;
-            ImGui::SetCursorPosY(currentY + offset);
-            TextLabel->Render();
+            float spacing = 4.0f * scale;
+            ImVec2 textSize = TextLabel->CalcSize();
+            float offset = (interactSize.y - textSize.y) / 2.0f;
+
+            Rectangle textBounds;
+            textBounds.X = pos.x + interactSize.x + spacing;
+            textBounds.Y = pos.y + offset;
+            textBounds.Width = textSize.x;
+            textBounds.Height = textSize.y;
+
+            TextLabel->Draw(textBounds, scale);
         }
     }
 

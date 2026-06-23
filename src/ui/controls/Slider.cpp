@@ -13,35 +13,36 @@ namespace UI {
 
 
 
-    void Slider::OnRender() {
+    void Slider::OnDraw(const Rectangle& bounds, float scale) {
         if (!Value) return;
 
-
-
-        float height = 24.0f;
+        float height = 24.0f * scale;
+        ImVec2 pos = bounds.GetMin();
+        float width = bounds.Width > 0.0f ? bounds.Width : 200.0f * scale;
 
         if (TextLabel) {
-            float currentY = ImGui::GetCursorPosY();
-            float offset = (height - ImGui::GetFontSize()) / 2.0f;
-            ImGui::SetCursorPosY(currentY + offset);
+            float spacing = 8.0f * scale;
+            ImVec2 textSize = TextLabel->CalcSize();
+            float offset = (height - textSize.y) / 2.0f;
             
-            float startX = ImGui::GetCursorPosX();
-            TextLabel->Render();
+            Rectangle textBounds;
+            textBounds.X = pos.x;
+            textBounds.Y = pos.y + offset;
+            textBounds.Width = LabelWidth > 0.0f ? LabelWidth * scale : textSize.x;
+            textBounds.Height = textSize.y;
             
-            ImGui::SameLine();
-            if (LabelWidth > 0.0f) {
-                ImGui::SetCursorPosX(startX + LabelWidth);
-            }
-            ImGui::SetCursorPosY(currentY);
+            TextLabel->Draw(textBounds, scale);
+            
+            float labelSpace = LabelWidth > 0.0f ? LabelWidth * scale : textSize.x + spacing;
+            pos.x += labelSpace;
+            width -= labelSpace;
         }
 
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-        float width = m_size.x > 0.0f ? m_size.x : ImGui::CalcItemWidth();
-        if (width <= 0) width = 200.0f; // Default
+        ImGui::SetCursorScreenPos(pos);
 
-        float nubSize = 20.0f;
-        float capW = 4.0f;
-        float boundW = 3.0f;
+        float nubSize = 20.0f * scale;
+        float capW = 4.0f * scale;
+        float boundW = 3.0f * scale;
         float usableWidth = width - (2.0f * boundW) - nubSize;
 
         ImGui::InvisibleButton(m_id.c_str(), ImVec2(width, height));
@@ -61,25 +62,24 @@ namespace UI {
         // Draw track
         Texture_t* texTrack = NexusSDK::Content->GetTexture(IDB_TRACKBAR_ATLAS_BG);
         if (texTrack) {
-            float trackHeight = 16.0f; // Original texture height
-            float capW = 4.0f;
+            float trackHeight = 16.0f * scale;
             
             ImVec2 tPos = ImVec2(pos.x, pos.y + (height - trackHeight) / 2.0f);
             
             // Left cap
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 tPos, ImVec2(tPos.x + capW, tPos.y + trackHeight),
-                ImVec2(0, 0), ImVec2(capW / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+                ImVec2(0, 0), ImVec2(4.0f / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
                 
             // Middle
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 ImVec2(tPos.x + capW, tPos.y), ImVec2(tPos.x + width - capW, tPos.y + trackHeight),
-                ImVec2(capW / 256.0f, 0), ImVec2((256.0f - capW) / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+                ImVec2(4.0f / 256.0f, 0), ImVec2((256.0f - 4.0f) / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
                 
             // Right cap
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
                 ImVec2(tPos.x + width - capW, tPos.y), ImVec2(tPos.x + width, tPos.y + trackHeight),
-                ImVec2((256.0f - capW) / 256.0f, 0), ImVec2(1, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+                ImVec2((256.0f - 4.0f) / 256.0f, 0), ImVec2(1, 1), ImGui::GetColorU32(IM_COL32_WHITE));
         } else {
             ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(50,50,50,255)));
         }

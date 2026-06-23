@@ -93,7 +93,7 @@ void Label::SetMarkupText(const std::string& markupText) {
     pushPart();
 }
 
-ImVec2 Label::CalcSize() {
+ImVec2 Label::CalcSize() const {
     float width = 0.0f;
     float height = 0.0f;
     
@@ -119,9 +119,10 @@ ImVec2 Label::CalcSize() {
     return ImVec2(width, height);
 }
 
-void Label::OnRender() {
-    float startX = ImGui::GetCursorPosX();
-    float maxWidth = m_size.x > 0 ? m_size.x : ImGui::GetContentRegionAvail().x;
+void Label::OnDraw(const Rectangle& bounds, float scale) {
+    ImGui::SetCursorScreenPos(bounds.GetMin());
+    float startXScreen = bounds.X;
+    float maxWidth = bounds.Width > 0 ? bounds.Width : 99999.0f;
     ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     bool isFirstTokenOnLine = true;
@@ -155,7 +156,7 @@ void Label::OnRender() {
         for (const auto& token : tokens) {
             if (token == "\n") {
                 ImGui::NewLine();
-                ImGui::SetCursorPosX(startX);
+                ImGui::SetCursorScreenPos(ImVec2(startXScreen, ImGui::GetCursorScreenPos().y));
                 isFirstTokenOnLine = true;
                 continue;
             }
@@ -164,16 +165,16 @@ void Label::OnRender() {
                 ImGui::SameLine(0.0f, 0.0f);
             }
 
-            float currentX = ImGui::GetCursorPosX();
+            float currentXScreen = ImGui::GetCursorScreenPos().x;
             ImVec2 size = ImGui::CalcTextSize(token.c_str());
             
             // Text Wrapping Logic
-            if (WrapText && !isFirstTokenOnLine && (currentX + size.x > startX + maxWidth)) {
+            if (WrapText && !isFirstTokenOnLine && (currentXScreen + size.x > startXScreen + maxWidth)) {
                 ImGui::NewLine();
-                ImGui::SetCursorPosX(startX);
+                ImGui::SetCursorScreenPos(ImVec2(startXScreen, ImGui::GetCursorScreenPos().y));
                 isFirstTokenOnLine = true;
                 if (token == " ") continue; // Skip leading space on a new line
-                currentX = ImGui::GetCursorPosX(); // Update for the new line
+                currentXScreen = ImGui::GetCursorScreenPos().x; // Update for the new line
             }
 
             ImVec2 minPos = ImGui::GetCursorScreenPos();

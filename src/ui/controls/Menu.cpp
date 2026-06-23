@@ -6,12 +6,14 @@
 namespace NexusSDK {
 namespace UI {
 
-void Menu::OnRender() {
+void Menu::OnDraw(const Rectangle& bounds, float scale) {
+    ImGui::SetCursorScreenPos(bounds.GetMin());
+
     if (BackgroundColor.w > 0.0f) {
         ImGui::PushStyleColor(ImGuiCol_ChildBg, BackgroundColor);
     }
     
-    bool isVisible = ImGui::BeginChild(m_id.c_str(), m_size, true, BackgroundColor.w == 0.0f ? ImGuiWindowFlags_NoBackground : 0);
+    bool isVisible = ImGui::BeginChild(m_id.c_str(), ImVec2(bounds.Width, bounds.Height), true, BackgroundColor.w == 0.0f ? ImGuiWindowFlags_NoBackground : 0);
     
     if (BackgroundColor.w > 0.0f) {
         ImGui::PopStyleColor();
@@ -20,11 +22,11 @@ void Menu::OnRender() {
     if (isVisible) {
         if (!HeaderTitle.empty()) {
             ImGui::Spacing();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8.0f);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (8.0f * scale));
             ImGui::TextColored(AccentColor, HeaderTitle.c_str());
             
             if (!HeaderSubtitle.empty()) {
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8.0f);
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (8.0f * scale));
                 ImGui::SetWindowFontScale(0.80f);
                 ImGui::TextDisabled("%s", HeaderSubtitle.c_str());
                 ImGui::SetWindowFontScale(1.0f);
@@ -34,6 +36,8 @@ void Menu::OnRender() {
             ImGui::Separator();
             ImGui::Spacing();
         }
+
+        float scaledItemHeight = ItemHeight * scale;
 
         for (size_t i = 0; i < Tabs.size(); ++i) {
             bool isSelected = (SelectedIndex == static_cast<int>(i));
@@ -51,7 +55,7 @@ void Menu::OnRender() {
 
             std::string label = "    " + Tabs[i].Name;
             ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
-            if (ImGui::Selectable(label.c_str(), isSelected, 0, ImVec2(0, ItemHeight))) {
+            if (ImGui::Selectable(label.c_str(), isSelected, 0, ImVec2(0, scaledItemHeight))) {
                 if (SelectedIndex != static_cast<int>(i)) {
                     SelectedIndex = static_cast<int>(i);
 
@@ -69,7 +73,7 @@ void Menu::OnRender() {
             if (isSelected && ShowAccentBar) {
                 ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(cursorPos.x, cursorPos.y), 
-                    ImVec2(cursorPos.x + 3.0f, cursorPos.y + ItemHeight), 
+                    ImVec2(cursorPos.x + (3.0f * scale), cursorPos.y + scaledItemHeight), 
                     ImGui::GetColorU32(AccentColor)
                 );
             }

@@ -14,6 +14,7 @@ public:
     Slider(const std::string& text, float* value, float min, float max) 
         : ControlBase(), Value(value), Min(min), Max(max) {
         TextLabel = std::make_shared<Label>(text);
+        TextLabel->WrapText = false;
     }
     virtual ~Slider() = default;
 
@@ -26,7 +27,19 @@ public:
     std::function<void(float)> OnValueChanged;
 
 protected:
-    virtual void OnRender() override;
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+
+    virtual ImVec2 GetAutoSize(float scale) const override {
+        ImVec2 size(200.0f, 24.0f);
+        if (TextLabel && LabelWidth == 0.0f) {
+            float spacing = 8.0f;
+            ImVec2 textSize = TextLabel->CalcSize();
+            size.x += (textSize.x / scale) + spacing;
+        } else if (LabelWidth > 0.0f) {
+            size.x += LabelWidth;
+        }
+        return size;
+    }
 
 private:
 

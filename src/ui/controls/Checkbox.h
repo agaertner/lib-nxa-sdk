@@ -13,6 +13,7 @@ public:
     Checkbox() : ControlBase() {}
     Checkbox(const std::string& text, bool* value) : ControlBase(), Value(value) {
         TextLabel = std::make_shared<Label>(text);
+        TextLabel->WrapText = false;
     }
     virtual ~Checkbox() = default;
 
@@ -21,7 +22,19 @@ public:
     std::function<void(bool)> OnCheckedChanged;
 
 protected:
-    virtual void OnRender() override;
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+
+    virtual ImVec2 GetAutoSize(float scale) const override {
+        ImVec2 size(0, 32.0f);
+        if (TextLabel) {
+            float spacing = 4.0f;
+            ImVec2 textSize = TextLabel->CalcSize();
+            size.x = 32.0f + spacing + (textSize.x / scale);
+        } else {
+            size.x = 32.0f;
+        }
+        return size;
+    }
 
 private:
 

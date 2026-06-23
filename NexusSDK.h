@@ -8,6 +8,7 @@
 
 // UI Framework
 #include "src/ui/controls/ControlBase.h"
+#include "src/ui/Viewport.h"
 #include "src/ui/controls/Label.h"
 #include "src/ui/controls/Container.h"
 #include "src/ui/controls/Tooltip.h"
@@ -39,6 +40,7 @@ namespace NexusSDK {
     inline void Initialize(AddonAPI_t* api, HMODULE hSelf, const std::filesystem::path& addonPath) {
         API = api;
         Module = hSelf;
+        NexusSDK::UI::Viewport::Initialize();
         if (!Audio) Audio = new AudioManager(api);
         if (!Content) Content = new ContentManager(api, hSelf);
         if (!Local && !addonPath.empty()) Local = new LocalManager(addonPath, api);
@@ -60,6 +62,7 @@ namespace NexusSDK {
     }
 
     inline void Shutdown() {
+        NexusSDK::UI::Viewport::Shutdown();
         if (Audio) { delete Audio; Audio = nullptr; }
         if (Content) { delete Content; Content = nullptr; }
         if (Local) { delete Local; Local = nullptr; }
@@ -68,9 +71,7 @@ namespace NexusSDK {
         Module = nullptr;
     }
 
-    namespace UI {
-        inline void RenderDialogs() {
-            StandardDialog::RenderAll();
-        }
+    inline void Render(float uiScale = 1.0f) {
+        NexusSDK::UI::Viewport::Render(uiScale);
     }
 }

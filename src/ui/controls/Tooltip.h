@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "ControlBase.h"
 #include "Label.h"
@@ -22,9 +22,15 @@ public:
     }
 
 protected:
-    virtual void OnRender() override {
+    virtual void OnDraw(const Rectangle& bounds, float scale) override {
         ImGui::BeginTooltip();
-        RenderChildren();
+        ImVec2 scrolledPos = ImGui::GetCursorScreenPos();
+        Rectangle clientBounds;
+        clientBounds.X = scrolledPos.x;
+        clientBounds.Y = scrolledPos.y;
+        clientBounds.Width = 1000.0f; // Arbitrary wide bounds for auto-resize
+        clientBounds.Height = 1000.0f;
+        DrawChildren(clientBounds, scale);
         ImGui::EndTooltip();
     }
 };

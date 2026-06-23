@@ -36,7 +36,7 @@ public:
     std::function<void()> OnClose;
 
 protected:
-    virtual void OnRender() override {
+    virtual void OnDraw(const Rectangle& bounds, float scale) override {
         if (!IsOpen) return;
 
         // We disable the native title bar to draw our own. 
@@ -48,11 +48,17 @@ protected:
             flags |= ImGuiWindowFlags_NoBackground;
         }
 
-        ImGui::SetNextWindowSize(m_size, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(bounds.GetMin(), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(bounds.Width, bounds.Height), ImGuiCond_FirstUseEver);
 
         if (ImGui::Begin(m_id.c_str(), &IsOpen, flags)) {
-            m_size = ImGui::GetWindowSize();
-            m_position = ImGui::GetWindowPos();
+            ImVec2 scaledSize = ImGui::GetWindowSize();
+            ImVec2 scaledPos = ImGui::GetWindowPos();
+            
+            m_size.x = scaledSize.x / scale;
+            m_size.y = scaledSize.y / scale;
+            m_position.x = scaledPos.x / scale;
+            m_position.y = scaledPos.y / scale;
             
             ImDrawList* drawList = ImGui::GetWindowDrawList();
 
@@ -60,11 +66,13 @@ protected:
             if (BackgroundTexture && BackgroundTexture->Get()) {
                 drawList->AddImage(
                     (ImTextureID)BackgroundTexture->Get(),
-                    m_position,
-                    ImVec2(m_position.x + m_size.x, m_position.y + m_size.y),
+                    scaledPos,
+                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y),
                     ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                 );
             }
+
+            float titlebarHeightScaled = TitlebarHeight * scale;
 
             // 2. Draw Custom Titlebar
             bool isFocused = ImGui::IsWindowFocused();
@@ -73,47 +81,53 @@ protected:
             if (tbTex && tbTex->Get()) {
                 drawList->AddImage(
                     (ImTextureID)tbTex->Get(),
-                    m_position,
-                    ImVec2(m_position.x + m_size.x, m_position.y + TitlebarHeight),
+                    scaledPos,
+                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + titlebarHeightScaled),
                     ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                 );
             } else {
                 // Native fallback for titlebar: Draw a rect
                 drawList->AddRectFilled(
-                    m_position, 
-                    ImVec2(m_position.x + m_size.x, m_position.y + TitlebarHeight), 
+                    scaledPos, 
+                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + titlebarHeightScaled), 
                     ImGui::GetColorU32(isFocused ? ImGuiCol_TitleBgActive : ImGuiCol_TitleBg)
                 );
             }
 
             // 3. Draw Title Text
             if (!Title.empty()) {
-                drawList->AddText(ImVec2(m_position.x + 15.0f, m_position.y + 10.0f), ImColor(255, 255, 255), Title.c_str());
+                drawList->AddText(ImVec2(scaledPos.x + (15.0f * scale), scaledPos.y + (10.0f * scale)), ImColor(255, 255, 255), Title.c_str());
             }
 
             // 4. Custom Dragging Area (Titlebar)
             ImGui::SetCursorPos(ImVec2(0, 0));
-            ImGui::InvisibleButton("##titleBarDrag", ImVec2(m_size.x, TitlebarHeight));
+            ImGui::InvisibleButton("##titleBarDrag", ImVec2(scaledSize.x, titlebarHeightScaled));
             if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 ImVec2 delta = ImGui::GetIO().MouseDelta;
-                ImGui::SetWindowPos(ImVec2(m_position.x + delta.x, m_position.y + delta.y));
+                ImGui::SetWindowPos(ImVec2(scaledPos.x + delta.x, scaledPos.y + delta.y));
             }
 
             // 5. Content Container
             // We use a sub-child to trap children safely below the titlebar and prevent overlap
-            ImGui::SetCursorPos(ImVec2(0, TitlebarHeight));
-            if (ImGui::BeginChild("##windowContent", ImVec2(m_size.x, m_size.y - TitlebarHeight), false, ImGuiWindowFlags_NoBackground)) {
-                RenderChildren();
+            ImGui::SetCursorPos(ImVec2(0, titlebarHeightScaled));
+            if (ImGui::BeginChild("##windowContent", ImVec2(scaledSize.x, scaledSize.y - titlebarHeightScaled), false, ImGuiWindowFlags_NoBackground)) {
+                ImVec2 scrolledPos = ImGui::GetCursorScreenPos();
+                Rectangle clientBounds;
+                clientBounds.X = scrolledPos.x;
+                clientBounds.Y = scrolledPos.y;
+                clientBounds.Width = scaledSize.x;
+                clientBounds.Height = scaledSize.y - titlebarHeightScaled;
+                DrawChildren(clientBounds, scale);
             }
             ImGui::EndChild();
 
             // 6. Custom Resize Grip (Bottom Right)
             if (IsResizable) {
-                float gripSize = 25.0f;
-                ImVec2 gripLocalPos = ImVec2(m_size.x - gripSize, m_size.y - gripSize);
+                float gripSizeScaled = 25.0f * scale;
+                ImVec2 gripLocalPos = ImVec2(scaledSize.x - gripSizeScaled, scaledSize.y - gripSizeScaled);
                 ImGui::SetCursorPos(gripLocalPos);
                 
-                ImGui::InvisibleButton("##resizeGrip", ImVec2(gripSize, gripSize));
+                ImGui::InvisibleButton("##resizeGrip", ImVec2(gripSizeScaled, gripSizeScaled));
                 bool isHovered = ImGui::IsItemHovered();
                 bool isActive = ImGui::IsItemActive();
 
@@ -124,23 +138,23 @@ protected:
                 if (resizeTex && resizeTex->Get()) {
                     drawList->AddImage(
                         (ImTextureID)resizeTex->Get(),
-                        ImVec2(m_position.x + gripLocalPos.x, m_position.y + gripLocalPos.y),
-                        ImVec2(m_position.x + m_size.x, m_position.y + m_size.y),
+                        ImVec2(scaledPos.x + gripLocalPos.x, scaledPos.y + gripLocalPos.y),
+                        ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y),
                         ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
                     );
                 } else {
                     // Fallback to a simple drawn triangle
                     ImU32 gripColor = ImGui::GetColorU32(isActive ? ImGuiCol_ResizeGripActive : (isHovered ? ImGuiCol_ResizeGripHovered : ImGuiCol_ResizeGrip));
-                    drawList->PathLineTo(ImVec2(m_position.x + m_size.x - gripSize, m_position.y + m_size.y));
-                    drawList->PathLineTo(ImVec2(m_position.x + m_size.x, m_position.y + m_size.y));
-                    drawList->PathLineTo(ImVec2(m_position.x + m_size.x, m_position.y + m_size.y - gripSize));
+                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x - gripSizeScaled, scaledPos.y + scaledSize.y));
+                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y));
+                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y - gripSizeScaled));
                     drawList->PathFillConvex(gripColor);
                 }
 
                 // Handle manual resizing
                 if (isActive && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                     ImVec2 delta = ImGui::GetIO().MouseDelta;
-                    ImVec2 newSize = ImVec2((std::max)(100.0f, m_size.x + delta.x), (std::max)(100.0f, m_size.y + delta.y));
+                    ImVec2 newSize = ImVec2((std::max)(100.0f * scale, scaledSize.x + delta.x), (std::max)(100.0f * scale, scaledSize.y + delta.y));
                     ImGui::SetWindowSize(newSize);
                 }
             }

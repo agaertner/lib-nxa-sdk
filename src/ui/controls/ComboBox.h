@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "ControlBase.h"
 #include <string>
@@ -20,9 +20,11 @@ public:
     std::function<void(int)> OnValueChanged;
 
 protected:
-    virtual void OnRender() override {
+    virtual void OnDraw(const Rectangle& bounds, float scale) override {
         if (!SelectedIndex || Options.empty() || *SelectedIndex < 0 || *SelectedIndex >= (int)Options.size()) return;
 
+        ImGui::SetCursorScreenPos(bounds.GetMin());
+        ImGui::SetNextItemWidth(bounds.Width);
         if (ImGui::BeginCombo(Text.c_str(), Options[*SelectedIndex].c_str())) {
             for (size_t i = 0; i < Options.size(); i++) {
                 bool isSelected = (*SelectedIndex == static_cast<int>(i));

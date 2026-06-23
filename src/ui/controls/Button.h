@@ -20,10 +20,21 @@ public:
     float Width = 128.0f;
     float Height = 26.0f;
 
+    bool ForceHover = false;
+
 protected:
-    virtual void OnRender() override;
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+
+    virtual ImVec2 GetAutoSize(float scale) const override {
+        return ImVec2(Width, Height);
+    }
+
+    virtual void DoMouseLeftDown(const MouseEventArgs& args) override;
+    virtual void DoMouseLeftUp(const MouseEventArgs& args) override;
+    virtual void DoMouseLeft(const MouseEventArgs& args) override;
 
 private:
+    bool m_isPressed = false;
     float m_animState = 0.0f;
     const int ATLAS_SPRITE_WIDTH = 350;
     const int ATLAS_SPRITE_HEIGHT = 20;

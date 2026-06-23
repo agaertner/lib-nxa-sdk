@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Container.h"
 
@@ -19,19 +19,35 @@ public:
     float ControlPadding = 8.0f;
 
 protected:
-    virtual void OnRender() override {
-        bool isVisible = ImGui::BeginChild(m_id.c_str(), m_size, false, ImGuiWindowFlags_NoBackground);
+    virtual void OnDraw(const Rectangle& bounds, float scale) override {
+        ImGui::SetCursorScreenPos(bounds.GetMin());
+        bool isVisible = ImGui::BeginChild(m_id.c_str(), ImVec2(bounds.Width, bounds.Height), false, ImGuiWindowFlags_NoBackground);
         
         if (isVisible) {
+            ImVec2 scrolledPos = ImGui::GetCursorScreenPos();
+            Rectangle clientBounds = bounds;
+            clientBounds.X = scrolledPos.x;
+            clientBounds.Y = scrolledPos.y;
+
+            float currentX = clientBounds.X;
+            float currentY = clientBounds.Y;
+
             for (size_t i = 0; i < m_children.size(); ++i) {
-                m_children[i]->Render();
+                auto& child = m_children[i];
+                if (!child->IsVisible()) continue;
                 
-                if (i < m_children.size() - 1) {
-                    if (ControlFlowDirection == FlowDirection::TopToBottom) {
-                        ImGui::Dummy(ImVec2(0.0f, ControlPadding));
-                    } else if (ControlFlowDirection == FlowDirection::LeftToRight) {
-                        ImGui::SameLine(0.0f, ControlPadding);
-                    }
+                Rectangle childBounds;
+                childBounds.X = currentX + (child->GetPosition().x * scale);
+                childBounds.Y = currentY + (child->GetPosition().y * scale);
+                childBounds.Width = child->GetSize(scale).x * scale;
+                childBounds.Height = child->GetSize(scale).y * scale;
+
+                child->Draw(childBounds, scale);
+                
+                if (ControlFlowDirection == FlowDirection::TopToBottom) {
+                    currentY += childBounds.Height + (ControlPadding * scale);
+                } else if (ControlFlowDirection == FlowDirection::LeftToRight) {
+                    currentX += childBounds.Width + (ControlPadding * scale);
                 }
             }
         }

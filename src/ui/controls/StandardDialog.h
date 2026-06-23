@@ -39,15 +39,11 @@ public:
     ~StandardDialog() = default;
 
     static void Show(const std::string& text, DialogIcon sysIcon = DialogIcon::None, std::vector<DialogButton> buttons = { DialogButton::OK() });
-    
-    // Must be called in the addon's render loop
-    static void RenderAll();
 
 protected:
-    virtual void OnRender() override;
-
-private:
-    void CalculateLayout();
+    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+    virtual void Draw(const Rectangle& bounds, float scale) override;
+    virtual void CalculateLayout(float scale);
     void Close();
 
     std::string m_text;
@@ -62,8 +58,7 @@ private:
     float m_maxIconSize = 64.0f;
     float m_buttonWidth = 117.0f;
     float m_buttonHeight = 24.0f;
-
-    static std::vector<std::shared_ptr<StandardDialog>> s_activeDialogs;
+    bool m_wasOpened = false;
 };
 
 } // namespace UI

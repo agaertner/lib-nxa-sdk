@@ -10,32 +10,38 @@ namespace UI {
 
 
 
-    void Dropdown::OnRender() {
+    void Dropdown::OnDraw(const Rectangle& bounds, float scale) {
         if (!SelectedIndex) return;
 
+        float height = bounds.Height > 0.0f ? bounds.Height : (ImGui::GetTextLineHeightWithSpacing() + 4.0f) * scale;
+        ImVec2 pos = bounds.GetMin();
+        float width = bounds.Width > 0.0f ? bounds.Width : GetAutoSize(scale).x * scale;
 
-
-        float height = ImGui::GetTextLineHeightWithSpacing() + 4.0f;
-
+        float buttonWidth = width;
         if (TextLabel) {
-            float currentY = ImGui::GetCursorPosY();
-            float offset = (height - ImGui::GetFontSize()) / 2.0f;
-            ImGui::SetCursorPosY(currentY + offset);
+            float spacing = 8.0f * scale;
+            ImVec2 textSize = TextLabel->CalcSize();
+            float offset = (height - textSize.y) / 2.0f;
             
-            TextLabel->Render();
+            Rectangle textBounds;
+            textBounds.X = pos.x;
+            textBounds.Y = pos.y + offset;
+            textBounds.Width = textSize.x;
+            textBounds.Height = textSize.y;
             
-            ImGui::SameLine();
-            ImGui::SetCursorPosY(currentY);
+            TextLabel->Draw(textBounds, scale);
+            
+            // Shift pos to the right for the actual dropdown box
+            pos.x += textSize.x + spacing;
+            buttonWidth -= (textSize.x + spacing); 
         }
 
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-        float width = m_size.x > 0.0f ? m_size.x : ImGui::CalcItemWidth();
-        if (width <= 0) width = 150.0f; // Default
+        ImGui::SetCursorScreenPos(pos);
 
         std::string popupId = "popup_" + m_id;
 
         // Button to toggle popup
-        if (ImGui::InvisibleButton(m_id.c_str(), ImVec2(width, height))) {
+        if (ImGui::InvisibleButton(m_id.c_str(), ImVec2(buttonWidth, height))) {
             if (!ImGui::IsPopupOpen(popupId.c_str())) {
                 ImGui::OpenPopup(popupId.c_str());
                 NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
@@ -51,32 +57,38 @@ namespace UI {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         
         // Background
-        drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(10, 10, 10, 255)));
+        drawList->AddRectFilled(pos, ImVec2(pos.x + buttonWidth, pos.y + height), ImGui::GetColorU32(IM_COL32(10, 10, 10, 255)));
         
         // Highlight tint
         if (isHighlighted) {
-            drawList->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
+            drawList->AddRectFilled(pos, ImVec2(pos.x + buttonWidth, pos.y + height), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
         }
 
         // 1-pixel border
-        drawList->AddRect(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(80, 80, 80, 255)), 0.0f, 0, 1.0f);
+        drawList->AddRect(pos, ImVec2(pos.x + buttonWidth, pos.y + height), ImGui::GetColorU32(IM_COL32(80, 80, 80, 255)), 0.0f, 0, 1.0f);
 
         // Selected Text
         if (*SelectedIndex >= 0 && *SelectedIndex < OptionLabels.size() && OptionLabels[*SelectedIndex]) {
-            ImGui::SetCursorScreenPos(ImVec2(pos.x + 8.0f, pos.y + (height - ImGui::GetFontSize()) / 2.0f));
+            ImVec2 textSize = OptionLabels[*SelectedIndex]->CalcSize();
+            Rectangle selBounds;
+            selBounds.X = pos.x + (8.0f * scale);
+            selBounds.Y = pos.y + (height - textSize.y) / 2.0f;
+            selBounds.Width = textSize.x;
+            selBounds.Height = textSize.y;
+
             if (isHighlighted) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f));
             } else {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 240/255.0f, 239/255.0f, 1.0f));
             }
-            OptionLabels[*SelectedIndex]->Render();
+            OptionLabels[*SelectedIndex]->Draw(selBounds, scale);
             ImGui::PopStyleColor();
         }
 
         // Arrow
         Texture_t* texArrow = NexusSDK::Content->GetTexture(IDB_DROPDOWN_ARROW);
-        float arrowSize = 16.0f;
-        ImVec2 arrowMin = ImVec2(pos.x + width - arrowSize - 4.0f, pos.y + (height - arrowSize) / 2.0f);
+        float arrowSize = 16.0f * scale;
+        ImVec2 arrowMin = ImVec2(pos.x + buttonWidth - arrowSize - (4.0f * scale), pos.y + (height - arrowSize) / 2.0f);
         ImVec2 arrowMax = ImVec2(arrowMin.x + arrowSize, arrowMin.y + arrowSize);
         if (texArrow) {
             drawList->AddImage((ImTextureID)texArrow->Resource, arrowMin, arrowMax, ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
@@ -84,7 +96,7 @@ namespace UI {
 
         // Popup logic
         ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + height));
-        ImGui::SetNextWindowSize(ImVec2(width, 0));
+        ImGui::SetNextWindowSize(ImVec2(buttonWidth, 0));
         
         ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.04f, 0.04f, 0.04f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
@@ -99,7 +111,7 @@ namespace UI {
             for (int i = 0; i < Options.size(); ++i) {
                 ImGui::PushID(i);
                 ImVec2 itemPos = ImGui::GetCursorScreenPos();
-                ImVec2 itemSize = ImVec2(width, height);
+                ImVec2 itemSize = ImVec2(buttonWidth, height);
 
                 std::string itemId = "##item_" + m_id;
                 bool itemClicked = ImGui::InvisibleButton(itemId.c_str(), itemSize);
@@ -119,7 +131,6 @@ namespace UI {
                     pdl->AddRectFilled(itemPos, ImVec2(itemPos.x + itemSize.x, itemPos.y + itemSize.y), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
                 }
                 
-                ImGui::SetCursorScreenPos(ImVec2(itemPos.x + 8.0f, itemPos.y + (height - ImGui::GetFontSize()) / 2.0f));
                 if (shouldHighlight) {
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f));
                 } else {
@@ -127,7 +138,13 @@ namespace UI {
                 }
                 
                 if (i < OptionLabels.size() && OptionLabels[i]) {
-                    OptionLabels[i]->Render();
+                    ImVec2 itemTextSize = OptionLabels[i]->CalcSize();
+                    Rectangle itemSelBounds;
+                    itemSelBounds.X = itemPos.x + (8.0f * scale);
+                    itemSelBounds.Y = itemPos.y + (height - itemTextSize.y) / 2.0f;
+                    itemSelBounds.Width = itemTextSize.x;
+                    itemSelBounds.Height = itemTextSize.y;
+                    OptionLabels[i]->Draw(itemSelBounds, scale);
                 }
 
                 ImGui::PopStyleColor();
@@ -140,10 +157,6 @@ namespace UI {
         
         ImGui::PopStyleVar(4);
         ImGui::PopStyleColor(2);
-
-        // Restore layout bounds so ImGui::SameLine() works on the dropdown box
-        ImGui::SetCursorScreenPos(pos);
-        ImGui::Dummy(ImVec2(width, height));
     }
 
 }
