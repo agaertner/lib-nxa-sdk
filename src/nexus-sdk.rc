@@ -1,6 +1,5 @@
-#include "../submodules/lib-nxa-sdk/nexus-sdk-resource.h"
+#include "nexus-sdk-resource.h"
 
-// RCDATA is used for raw binary files (like PNGs)
 NXA_TRACKBAR_BG             RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/154968.png"
 NXA_TRACKBAR_ATLAS_BG       RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-track.png"
 NXA_TRACKBAR_NUB            RCDATA "../submodules/lib-nxa-sdk/ref/textures/controls/trackbar/tb-nub.png"

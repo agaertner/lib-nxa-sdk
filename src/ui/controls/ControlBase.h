@@ -4,8 +4,10 @@
 #include <vector>
 #include <memory>
 #include <functional>
-#include <imgui/imgui.h>
+#include <nexus-imgui/imgui.h>
 #include "../../utils/ImID.h"
+#include "../../utils/ImStateGuards.h"
+#include "../../services/NexusService.h"
 
 namespace NexusSDK {
 namespace UI {
@@ -38,6 +40,7 @@ public:
     // Retained State
     float Opacity = 1.0f;
     CaptureType InputCapture = CaptureType::Capture;
+    ImFont* Font = nullptr;
     
     void SetVisible(bool visible) { m_visible = visible; }
     bool IsVisible() const { return m_visible; }
@@ -137,23 +140,20 @@ public:
         
         if (!m_visible || Opacity <= 0.0f) return;
 
-        ImGui::PushID(m_id.c_str());
-
-        bool pushAlpha = (Opacity < 1.0f);
-        if (pushAlpha) {
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * Opacity);
+        ID idGuard(m_id.c_str());
+        
+        ImFont* fontToUse = this->Font;
+        if (!fontToUse && Services::NexusService::Get()) {
+            fontToUse = Services::NexusService::Get()->FontUI();
         }
+        struct Font fontGuard(fontToUse);
+        
+        Style alphaGuard(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * Opacity);
 
         // Call the derived class's actual drawing logic
         OnDraw(bounds, scale);
 
         HandleMouseEvents(bounds, scale);
-
-        if (pushAlpha) {
-            ImGui::PopStyleVar();
-        }
-
-        ImGui::PopID();
     }
 
 protected:

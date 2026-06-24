@@ -38,7 +38,11 @@ public:
     StandardDialog(const std::string& text, DialogIcon sysIcon, const std::vector<DialogButton>& buttons);
     ~StandardDialog() = default;
 
-    static void Show(const std::string& text, DialogIcon sysIcon = DialogIcon::None, std::vector<DialogButton> buttons = { DialogButton::OK() });
+    static std::shared_ptr<StandardDialog> Show(const std::string& text, DialogIcon sysIcon = DialogIcon::None, std::vector<DialogButton> buttons = { DialogButton::OK() });
+
+    void RegisterAction(const std::string& actionID, std::function<void()> callback) {
+        if (m_label) m_label->RegisterAction(actionID, callback);
+    }
 
 protected:
     virtual void OnDraw(const Rectangle& bounds, float scale) override;

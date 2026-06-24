@@ -4,7 +4,7 @@
 #include <memory>
 #include <windows.h>
 struct AddonAPI_t;
-#include <imgui/imgui.h>
+#include <nexus-imgui/imgui.h>
 #include "../utils/AsyncTexture.h"
 #include "../utils/AsyncFont.h"
 

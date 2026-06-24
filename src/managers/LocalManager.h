@@ -8,8 +8,7 @@
 #include <filesystem>
 #include "thirdparty/nlohmann/json.hpp"
 #include <functional>
-#include "Defines.h"
-
+#include <nexus-core/Nexus.h>
 namespace NexusSDK {
 
     class LocalManager {
@@ -40,3 +39,4 @@ namespace NexusSDK {
 }
 
 #endif // LOCAL_MANAGER_H
+

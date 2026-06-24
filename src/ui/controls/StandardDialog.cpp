@@ -1,8 +1,10 @@
-#include "../../../nexus-sdk-resource.h"
+#include "../../nexus-sdk-resource.h"
 #include "StandardDialog.h"
-#include "../../../NexusSDK.h"
+#include "../../utils/ImID.h"
+#include "../../utils/ImStateGuards.h"
+#include <NexusSDK.h>
 
-#include <imgui/imgui.h>
+#include <nexus-imgui/imgui.h>
 #include <algorithm>
 #include "../Viewport.h"
 
@@ -43,7 +45,7 @@ StandardDialog::StandardDialog(const std::string& text, DialogIcon sysIcon, cons
     }
 }
 
-void StandardDialog::Show(const std::string& text, DialogIcon sysIcon, std::vector<DialogButton> buttons) {
+std::shared_ptr<StandardDialog> StandardDialog::Show(const std::string& text, DialogIcon sysIcon, std::vector<DialogButton> buttons) {
     if (NexusSDK::Audio) {
         NexusSDK::Audio->Play("NXA_AUDIO_MENU_ITEM_CLICK");
     }
@@ -52,6 +54,7 @@ void StandardDialog::Show(const std::string& text, DialogIcon sysIcon, std::vect
     if (Viewport::Get()) {
         Viewport::Get()->AddChild(dialog);
     }
+    return dialog;
 }
 
 void StandardDialog::Close() {
@@ -89,9 +92,9 @@ void StandardDialog::Draw(const Rectangle& bounds, float scale) {
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    Style paddingGuard(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
+    Style roundingGuard(ImGuiStyleVar_WindowRounding, 0.0f);
+    Color bgGuard(ImGuiCol_WindowBg, 0.0f, 0.0f, 0.0f, 0.0f);
 
     // Center on screen
     ImVec2 center = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
@@ -99,13 +102,7 @@ void StandardDialog::Draw(const Rectangle& bounds, float scale) {
     ImGui::SetNextWindowSize(ImVec2(m_size.x * scale, 0)); // Let height auto-size
 
     if (ImGui::Begin((m_id + "_Dialog").c_str(), &m_visible, flags)) {
-        ImGui::PopStyleColor();
-        ImGui::PopStyleVar(2);
-
         OnDraw(bounds, scale);
-    } else {
-        ImGui::PopStyleColor();
-        ImGui::PopStyleVar(2);
     }
     ImGui::End();
 }

@@ -1,4 +1,6 @@
-#include "Label.h"
+﻿#include "Label.h"
+#include "../../NexusSDK.h"
+#include <windows.h>
 #include <sstream>
 
 namespace NexusSDK {
@@ -18,8 +20,8 @@ void Label::ClearParts() {
     m_parts.clear();
 }
 
-void Label::RegisterLink(const std::string& linkID, std::function<void()> callback) {
-    m_linkCallbacks[linkID] = callback;
+void Label::RegisterAction(const std::string& actionID, std::function<void()> callback) {
+    m_actionCallbacks[actionID] = callback;
 }
 
 ImVec4 Label::ParseHexColor(const std::string& hex) {
@@ -37,8 +39,14 @@ void Label::SetMarkupText(const std::string& markupText) {
     bool hasColor = false;
     ImVec4 currentColor = {1, 1, 1, 1};
     bool isLink = false;
-    std::string currentLinkID = "";
+    std::string currentActionID = "";
+    std::string currentHref = "";
     bool isBold = false;
+    bool isStrike = false;
+    bool isUnderline = false;
+    bool isStroke = false;
+    std::string currentFont = "";
+    float currentSize = 0.0f;
     
     std::string buffer = "";
 
@@ -49,9 +57,18 @@ void Label::SetMarkupText(const std::string& markupText) {
             part.HasColor = hasColor;
             part.TextColor = currentColor;
             part.IsLink = isLink;
-            part.LinkID = currentLinkID;
+            part.ActionID = currentActionID;
+            part.HrefURL = currentHref;
             part.IsBold = isBold;
-            if (isLink) part.IsUnderlined = true;
+            part.IsStrikeThrough = isStrike;
+            part.IsUnderlined = isUnderline || isLink;
+            part.HasStroke = isStroke;
+            
+            if (!currentFont.empty() || currentSize > 0.0f) {
+                part.FontId = currentFont.empty() ? "NXA_FONT_MENOMONIA" : currentFont;
+                part.FontSize = currentSize > 0.0f ? currentSize : 16.0f;
+            }
+            
             AddPart(part);
             buffer.clear();
         }
@@ -75,15 +92,36 @@ void Label::SetMarkupText(const std::string& markupText) {
                     hasColor = false;
                     i = endTag + 1;
                     continue;
-                } else if (tag.rfind("link=", 0) == 0) { // <link=ID>
+                } else if (tag.rfind("cref=", 0) == 0) { // <cref=ID>
                     pushPart();
                     isLink = true;
-                    currentLinkID = tag.substr(5);
+                    std::string actionVal = tag.substr(7);
+                    if (actionVal.length() >= 2 && actionVal.front() == '"' && actionVal.back() == '"') {
+                        actionVal = actionVal.substr(1, actionVal.length() - 2);
+                    }
+                    currentActionID = actionVal;
                     i = endTag + 1;
                     continue;
-                } else if (tag == "/link") {
+                } else if (tag == "/cref") {
                     pushPart();
                     isLink = false;
+                    currentActionID = "";
+                    i = endTag + 1;
+                    continue;
+                } else if (tag.rfind("href=", 0) == 0) { // <href=URL>
+                    pushPart();
+                    isLink = true;
+                    std::string linkVal = tag.substr(5);
+                    if (linkVal.length() >= 2 && linkVal.front() == '"' && linkVal.back() == '"') {
+                        linkVal = linkVal.substr(1, linkVal.length() - 2);
+                    }
+                    currentHref = linkVal;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/href") {
+                    pushPart();
+                    isLink = false;
+                    currentHref = "";
                     i = endTag + 1;
                     continue;
                 } else if (tag == "b") {
@@ -96,6 +134,60 @@ void Label::SetMarkupText(const std::string& markupText) {
                     isBold = false;
                     i = endTag + 1;
                     continue;
+                } else if (tag == "s") {
+                    pushPart();
+                    isStrike = true;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/s") {
+                    pushPart();
+                    isStrike = false;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "u") {
+                    pushPart();
+                    isUnderline = true;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/u") {
+                    pushPart();
+                    isUnderline = false;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "stroke") {
+                    pushPart();
+                    isStroke = true;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/stroke") {
+                    pushPart();
+                    isStroke = false;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag.rfind("font=\"", 0) == 0 && tag.back() == '"') { // <font="ID">
+                    pushPart();
+                    currentFont = tag.substr(6, tag.length() - 7);
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/font") {
+                    pushPart();
+                    currentFont = "";
+                    i = endTag + 1;
+                    continue;
+                } else if (tag.rfind("size=", 0) == 0) { // <size=42>
+                    pushPart();
+                    try {
+                        currentSize = std::stof(tag.substr(5));
+                    } catch(...) {
+                        currentSize = 0.0f;
+                    }
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/size") {
+                    pushPart();
+                    currentSize = 0.0f;
+                    i = endTag + 1;
+                    continue;
                 }
             }
         }
@@ -105,28 +197,28 @@ void Label::SetMarkupText(const std::string& markupText) {
     pushPart();
 }
 
+ImVec2 LabelPart::CalcSize(ImFont* fallbackFont) const {
+    ImFont* activeFont = this->Font;
+    if (!this->FontId.empty() || this->FontSize > 0.0f) {
+        std::string fontId = this->FontId.empty() ? "NXA_FONT_MENOMONIA" : this->FontId;
+        float size = this->FontSize > 0.0f ? this->FontSize : 16.0f;
+        if (NexusSDK::Content) {
+            activeFont = NexusSDK::Content->GetFont(fontId, size);
+        }
+    }
+    struct Font fontGuard(activeFont ? activeFont : fallbackFont);
+    return ImGui::CalcTextSize(this->Text.c_str());
+}
+
 ImVec2 Label::CalcSize() const {
     float width = 0.0f;
     float height = 0.0f;
     
     // Quick approximation for non-wrapped text
     for (const auto& part : m_parts) {
-        bool pushedFont = false;
-        if (part.Font && part.Font->Get()) {
-            ImGui::PushFont((ImFont*)part.Font->Get());
-            pushedFont = true;
-        } else if (Font && Font->Get()) {
-            ImGui::PushFont((ImFont*)Font->Get());
-            pushedFont = true;
-        }
-
-        ImVec2 partSize = ImGui::CalcTextSize(part.Text.c_str());
+        ImVec2 partSize = part.CalcSize(this->Font);
         width += partSize.x;
         height = (std::max)(height, partSize.y);
-
-        if (pushedFont) {
-            ImGui::PopFont();
-        }
     }
     return ImVec2(width, height);
 }
@@ -142,14 +234,15 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
     for (size_t i = 0; i < m_parts.size(); ++i) {
         auto& part = m_parts[i];
         
-        bool pushedFont = false;
-        if (part.Font && part.Font->Get()) {
-            ImGui::PushFont((ImFont*)part.Font->Get());
-            pushedFont = true;
-        } else if (Font && Font->Get()) {
-            ImGui::PushFont((ImFont*)Font->Get());
-            pushedFont = true;
+        ImFont* activeFont = part.Font;
+        if (!part.FontId.empty() || part.FontSize > 0.0f) {
+            std::string fontId = part.FontId.empty() ? "NXA_FONT_MENOMONIA" : part.FontId;
+            float size = part.FontSize > 0.0f ? part.FontSize : 16.0f;
+            if (NexusSDK::Content) {
+                activeFont = NexusSDK::Content->GetFont(fontId, size);
+            }
         }
+        struct Font fontGuard(activeFont ? activeFont : this->Font);
 
         // Tokenize by space and newline to allow wrapping
         std::vector<std::string> tokens;
@@ -196,19 +289,35 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
 
             // Click handling
             if (isHovered && part.IsLink && ImGui::IsMouseClicked(0)) {
-                if (m_linkCallbacks.count(part.LinkID)) {
-                    m_linkCallbacks[part.LinkID]();
+                if (!part.HrefURL.empty()) {
+                    ShellExecuteA(0, 0, part.HrefURL.c_str(), 0, 0, SW_SHOW);
+                } else if (!part.ActionID.empty() && m_actionCallbacks.count(part.ActionID)) {
+                    m_actionCallbacks[part.ActionID]();
                 }
             }
 
             // Colors & Hover state
-            ImVec4 renderColor = part.TextColor;
+            ImVec4 renderColor = part.HasColor ? part.TextColor : ImGui::GetStyleColorVec4(ImGuiCol_Text);
             if (isHovered && part.IsLink) {
                 renderColor = part.HoverColor;
                 ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
             }
 
             // Draw the text
+            if (part.HasStroke) {
+                ImVec2 p = ImGui::GetCursorScreenPos();
+                ImU32 strokeCol = IM_COL32(0, 0, 0, 255); // black border
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                drawList->AddText(ImVec2(p.x - 1.0f, p.y), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x + 1.0f, p.y), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x, p.y + 1.0f), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x - 1.0f, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x + 1.0f, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x - 1.0f, p.y + 1.0f), strokeCol, token.c_str());
+                drawList->AddText(ImVec2(p.x + 1.0f, p.y + 1.0f), strokeCol, token.c_str());
+            }
+
             if (part.IsBold) {
                 ImVec2 p = ImGui::GetCursorScreenPos();
                 ImGui::GetWindowDrawList()->AddText(ImVec2(p.x + 1.0f, p.y), ImGui::ColorConvertFloat4ToU32(renderColor), token.c_str());
@@ -223,19 +332,14 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
             isFirstTokenOnLine = false;
 
             // Draw Decorations
-            if (token != " ") {
-                if (part.IsUnderlined || part.IsLink) {
-                    drawList->AddLine(ImVec2(minPos.x, maxPos.y), ImVec2(maxPos.x, maxPos.y), ImGui::ColorConvertFloat4ToU32(renderColor));
-                }
-                if (part.IsStrikeThrough) {
-                    float midY = minPos.y + (size.y / 2.0f);
-                    drawList->AddLine(ImVec2(minPos.x, midY), ImVec2(maxPos.x, midY), ImGui::ColorConvertFloat4ToU32(renderColor));
-                }
+            if (part.IsUnderlined || part.IsLink) {
+                drawList->AddLine(ImVec2(minPos.x, maxPos.y), ImVec2(maxPos.x, maxPos.y), ImGui::ColorConvertFloat4ToU32(renderColor), 2.0f);
             }
-        }
-
-        if (pushedFont) {
-            ImGui::PopFont();
+            if (part.IsStrikeThrough) {
+                // Shift down slightly because lowercase letters sit lower in the vertical space
+                float midY = minPos.y + (size.y * 0.65f);
+                drawList->AddLine(ImVec2(minPos.x, midY), ImVec2(maxPos.x, midY), ImGui::ColorConvertFloat4ToU32(renderColor), 2.0f);
+            }
         }
     }
 }

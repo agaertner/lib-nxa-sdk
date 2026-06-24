@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ControlBase.h"
-#include "../../utils/AsyncFont.h"
+#include "../../utils/ImStateGuards.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -15,19 +15,25 @@ struct LabelPart {
     std::string Text;
     
     // Styling
-    std::shared_ptr<AsyncFont> Font = nullptr;
+    ImFont* Font = nullptr;
+    std::string FontId = "";
+    float FontSize = 0.0f;
     bool HasColor = false;
     ImVec4 TextColor = {1.0f, 1.0f, 1.0f, 1.0f};
     
     // Links & Interactions
     bool IsLink = false;
-    std::string LinkID = "";
+    std::string ActionID = "";
+    std::string HrefURL = "";
     ImVec4 HoverColor = {0.6f, 0.8f, 1.0f, 1.0f};
     
     // Decoration
     bool IsUnderlined = false;
     bool IsStrikeThrough = false;
     bool IsBold = false;
+    bool HasStroke = false;
+
+    ImVec2 CalcSize(ImFont* fallbackFont) const;
 };
 
 class Label : public ControlBase {
@@ -47,11 +53,10 @@ public:
     ImVec2 CalcSize() const;
 
     // Link Management
-    void RegisterLink(const std::string& linkID, std::function<void()> callback);
+    void RegisterAction(const std::string& actionID, std::function<void()> callback);
 
     // Settings
     bool WrapText = true;
-    std::shared_ptr<AsyncFont> Font = nullptr;
 
 protected:
     virtual void OnDraw(const Rectangle& bounds, float scale) override;
@@ -64,7 +69,7 @@ protected:
 
 private:
     std::vector<LabelPart> m_parts;
-    std::map<std::string, std::function<void()>> m_linkCallbacks;
+    std::map<std::string, std::function<void()>> m_actionCallbacks;
     
     ImVec4 ParseHexColor(const std::string& hex);
 };

@@ -1,9 +1,10 @@
-#include "../../../nexus-sdk-resource.h"
+#include "../../nexus-sdk-resource.h"
 #include "Dropdown.h"
-#include "../../../NexusSDK.h"
+#include <NexusSDK.h>
+#include "../../utils/ImStateGuards.h"
 
 
-#include <imgui/imgui.h>
+#include <nexus-imgui/imgui.h>
 
 namespace NexusSDK {
 namespace UI {
@@ -76,13 +77,8 @@ namespace UI {
             selBounds.Width = textSize.x;
             selBounds.Height = textSize.y;
 
-            if (isHighlighted) {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f));
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 240/255.0f, 239/255.0f, 1.0f));
-            }
+            Color textGuard(ImGuiCol_Text, isHighlighted ? ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f) : ImVec4(239/255.0f, 240/255.0f, 239/255.0f, 1.0f));
             OptionLabels[*SelectedIndex]->Draw(selBounds, scale);
-            ImGui::PopStyleColor();
         }
 
         // Arrow
@@ -98,18 +94,18 @@ namespace UI {
         ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y + height));
         ImGui::SetNextWindowSize(ImVec2(buttonWidth, 0));
         
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.04f, 0.04f, 0.04f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+        Color popupBgGuard(ImGuiCol_PopupBg, 0.04f, 0.04f, 0.04f, 1.0f);
+        Color borderGuard(ImGuiCol_Border, 0.3f, 0.3f, 0.3f, 1.0f);
+        Style borderSizeGuard(ImGuiStyleVar_WindowBorderSize, 1.0f);
+        Style paddingGuard(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        Style roundingGuard(ImGuiStyleVar_PopupRounding, 0.0f);
+        Style spacingGuard(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
         if (ImGui::BeginPopup(popupId.c_str())) {
             bool isPopupHovered = ImGui::IsWindowHovered();
 
             for (int i = 0; i < Options.size(); ++i) {
-                ImGui::PushID(i);
+                ID idGuard(i);
                 ImVec2 itemPos = ImGui::GetCursorScreenPos();
                 ImVec2 itemSize = ImVec2(buttonWidth, height);
 
@@ -131,11 +127,7 @@ namespace UI {
                     pdl->AddRectFilled(itemPos, ImVec2(itemPos.x + itemSize.x, itemPos.y + itemSize.y), ImGui::GetColorU32(IM_COL32(45, 37, 25, 255)));
                 }
                 
-                if (shouldHighlight) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f));
-                } else {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(239/255.0f, 240/255.0f, 239/255.0f, 1.0f));
-                }
+                Color textGuard(ImGuiCol_Text, shouldHighlight ? ImVec4(239/255.0f, 222/255.0f, 161/255.0f, 1.0f) : ImVec4(239/255.0f, 240/255.0f, 239/255.0f, 1.0f));
                 
                 if (i < OptionLabels.size() && OptionLabels[i]) {
                     ImVec2 itemTextSize = OptionLabels[i]->CalcSize();
@@ -147,16 +139,10 @@ namespace UI {
                     OptionLabels[i]->Draw(itemSelBounds, scale);
                 }
 
-                ImGui::PopStyleColor();
-
                 ImGui::SetCursorScreenPos(ImVec2(itemPos.x, itemPos.y + height));
-                ImGui::PopID();
             }
             ImGui::EndPopup();
         }
-        
-        ImGui::PopStyleVar(4);
-        ImGui::PopStyleColor(2);
     }
 
 }

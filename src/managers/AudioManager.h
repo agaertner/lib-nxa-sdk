@@ -6,7 +6,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <cstdint>
-#include "Defines.h"
+#include <nexus-core/Nexus.h>
 
 namespace NexusSDK {
     class AudioManager;

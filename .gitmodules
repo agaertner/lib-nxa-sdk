@@ -1,0 +1,12 @@
+[submodule "nexus-mumble"]
+	path = nexus-mumble
+	url = https://github.com/RaidcoreGG/RCGG-lib-mumble-api.git
+[submodule "nexus-rtapi"]
+	path = nexus-rtapi
+	url = https://github.com/RaidcoreGG/GW2-RealTime-API-Releases.git
+[submodule "nexus-core"]
+	path = nexus-core
+	url = https://github.com/RaidcoreGG/RCGG-lib-nexus-api.git
+[submodule "nexus-imgui"]
+	path = nexus-imgui
+	url = https://github.com/RaidcoreGG/imgui18000.git

@@ -1,10 +1,10 @@
-#include "../../../nexus-sdk-resource.h"
+#include "../../nexus-sdk-resource.h"
 #include "Button.h"
-#include "../../../NexusSDK.h"
+#include <NexusSDK.h>
 
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
+#include <nexus-imgui/imgui.h>
+#include <nexus-imgui/imgui_internal.h>
 
 namespace NexusSDK {
 namespace UI {
@@ -121,10 +121,6 @@ namespace UI {
 
     void Button::DoMouseLeftUp(const MouseEventArgs& args) {
         ControlBase::DoMouseLeftUp(args);
-        if (m_isPressed && m_isHovered) {
-            if (OnClick) OnClick();
-            NexusSDK::Audio->Play(IDR_AUDIO_BUTTON_CLICK);
-        }
         m_isPressed = false;
     }
 

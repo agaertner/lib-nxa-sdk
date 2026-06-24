@@ -1,7 +1,7 @@
 #ifndef ASYNCFONT_H
 #define ASYNCFONT_H
 
-#include "Defines.h"
+#include <nexus-core/Nexus.h>
 #include <string>
 #include <map>
 
@@ -35,3 +35,4 @@ namespace NexusSDK {
 }
 
 #endif // ASYNCFONT_H
+

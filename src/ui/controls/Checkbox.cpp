@@ -1,9 +1,9 @@
-#include "../../../nexus-sdk-resource.h"
+#include "../../nexus-sdk-resource.h"
 #include "Checkbox.h"
-#include "../../../NexusSDK.h"
+#include <NexusSDK.h>
 
 
-#include <imgui/imgui.h>
+#include <nexus-imgui/imgui.h>
 
 namespace NexusSDK {
 namespace UI {

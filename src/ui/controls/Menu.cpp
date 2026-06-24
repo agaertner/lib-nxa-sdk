@@ -1,5 +1,6 @@
 #include "Menu.h"
-#include "../../../NexusSDK.h"
+#include <NexusSDK.h>
+#include "../../utils/ImStateGuards.h"
 
 #include <cstdlib>
 
@@ -9,15 +10,9 @@ namespace UI {
 void Menu::OnDraw(const Rectangle& bounds, float scale) {
     ImGui::SetCursorScreenPos(bounds.GetMin());
 
-    if (BackgroundColor.w > 0.0f) {
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, BackgroundColor);
-    }
+    Color bgGuard(BackgroundColor.w > 0.0f, ImGuiCol_ChildBg, BackgroundColor);
     
     bool isVisible = ImGui::BeginChild(m_id.c_str(), ImVec2(bounds.Width, bounds.Height), true, BackgroundColor.w == 0.0f ? ImGuiWindowFlags_NoBackground : 0);
-    
-    if (BackgroundColor.w > 0.0f) {
-        ImGui::PopStyleColor();
-    }
 
     if (isVisible) {
         if (!HeaderTitle.empty()) {
@@ -43,18 +38,13 @@ void Menu::OnDraw(const Rectangle& bounds, float scale) {
             bool isSelected = (SelectedIndex == static_cast<int>(i));
             ImVec2 cursorPos = ImGui::GetCursorScreenPos();
         
-            if (isSelected) {
-                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0,0,0,0));
-                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1,1,1,0.05f));
-                ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1,1,1,0.05f));
-                ImGui::PushStyleColor(ImGuiCol_Text, AccentColor);
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1,1,1,0.05f));
-                ImGui::PushStyleColor(ImGuiCol_Text, TextUnselectedColor);
-            }
+            Color headerGuard(isSelected, ImGuiCol_Header, 0.0f, 0.0f, 0.0f, 0.0f);
+            Color headerHoveredGuard(ImGuiCol_HeaderHovered, 1.0f, 1.0f, 1.0f, 0.05f);
+            Color headerActiveGuard(isSelected, ImGuiCol_HeaderActive, 1.0f, 1.0f, 1.0f, 0.05f);
+            Color textGuard(ImGuiCol_Text, isSelected ? AccentColor : TextUnselectedColor);
 
             std::string label = "    " + Tabs[i].Name;
-            ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
+            Style alignGuard(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
             if (ImGui::Selectable(label.c_str(), isSelected, 0, ImVec2(0, scaledItemHeight))) {
                 if (SelectedIndex != static_cast<int>(i)) {
                     SelectedIndex = static_cast<int>(i);
@@ -68,7 +58,6 @@ void Menu::OnDraw(const Rectangle& bounds, float scale) {
                     if (OnSelectionChanged) OnSelectionChanged(SelectedIndex);
                 }
             }
-            ImGui::PopStyleVar();
 
             if (isSelected && ShowAccentBar) {
                 ImGui::GetWindowDrawList()->AddRectFilled(
@@ -76,12 +65,6 @@ void Menu::OnDraw(const Rectangle& bounds, float scale) {
                     ImVec2(cursorPos.x + (3.0f * scale), cursorPos.y + scaledItemHeight), 
                     ImGui::GetColorU32(AccentColor)
                 );
-            }
-
-            if (isSelected) {
-                ImGui::PopStyleColor(4);
-            } else {
-                ImGui::PopStyleColor(2);
             }
         } // closes for loop
     } // closes if (isVisible)
