@@ -1,5 +1,5 @@
 #include "NexusService.h"
-#include <nexus-imgui/imgui.h>
+#include <imgui.h>
 
 NexusSDK::Services::NexusService::NexusService(AddonAPI_t* p_api) : m_api(p_api)
 {

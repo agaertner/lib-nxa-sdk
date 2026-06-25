@@ -1,7 +1,7 @@
 #ifndef GW2MUMBLESERVICE_H
 #define GW2MUMBLESERVICE_H
 #include <chrono>
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 #include "../../nexus-mumble/Mumble.h"
 
 namespace NexusSDK::Services

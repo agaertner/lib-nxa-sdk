@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include <nexus-imgui/imgui.h>
+#include <imgui.h>
 
 namespace NexusSDK {
 namespace UI {

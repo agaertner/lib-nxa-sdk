@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ControlBase.h"
-#include <nexus-imgui/imgui.h>
+#include <imgui.h>
 
 namespace NexusSDK {
 namespace UI {

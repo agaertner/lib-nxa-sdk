@@ -3,8 +3,8 @@
 #include <NexusSDK.h>
 
 
-#include <nexus-imgui/imgui.h>
-#include <nexus-imgui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 
 namespace NexusSDK {
 namespace UI {

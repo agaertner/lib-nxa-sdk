@@ -1,6 +1,6 @@
 #ifndef NEXUSSERVICE_H
 #define NEXUSSERVICE_H
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 
 struct ImFont;
 

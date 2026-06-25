@@ -1,7 +1,7 @@
 #ifndef ASYNCTEXTURE_H
 #define ASYNCTEXTURE_H
 
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 #include <string>
 
 namespace NexusSDK {

@@ -1,7 +1,7 @@
 #ifndef ASYNCFONT_H
 #define ASYNCFONT_H
 
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 #include <string>
 #include <map>
 

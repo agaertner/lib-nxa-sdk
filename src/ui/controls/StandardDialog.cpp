@@ -4,7 +4,7 @@
 #include "../../utils/ImStateGuards.h"
 #include <NexusSDK.h>
 
-#include <nexus-imgui/imgui.h>
+#include <imgui.h>
 #include <algorithm>
 #include "../Viewport.h"
 

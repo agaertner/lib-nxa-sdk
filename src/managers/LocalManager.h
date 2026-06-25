@@ -6,9 +6,9 @@
 #include <unordered_map>
 #include <optional>
 #include <filesystem>
-#include "thirdparty/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include <functional>
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 namespace NexusSDK {
 
     class LocalManager {

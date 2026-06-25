@@ -1,4 +1,4 @@
-﻿#include "Label.h"
+#include "Label.h"
 #include "../../NexusSDK.h"
 #include <windows.h>
 #include <sstream>
@@ -44,6 +44,7 @@ void Label::SetMarkupText(const std::string& markupText) {
     bool isBold = false;
     bool isStrike = false;
     bool isUnderline = false;
+    bool isItalic = false;
     bool isStroke = false;
     std::string currentFont = "";
     float currentSize = 0.0f;
@@ -62,6 +63,7 @@ void Label::SetMarkupText(const std::string& markupText) {
             part.IsBold = isBold;
             part.IsStrikeThrough = isStrike;
             part.IsUnderlined = isUnderline || isLink;
+            part.IsItalic = isItalic;
             part.HasStroke = isStroke;
             
             if (!currentFont.empty() || currentSize > 0.0f) {
@@ -152,6 +154,16 @@ void Label::SetMarkupText(const std::string& markupText) {
                 } else if (tag == "/u") {
                     pushPart();
                     isUnderline = false;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "i") {
+                    pushPart();
+                    isItalic = true;
+                    i = endTag + 1;
+                    continue;
+                } else if (tag == "/i") {
+                    pushPart();
+                    isItalic = false;
                     i = endTag + 1;
                     continue;
                 } else if (tag == "stroke") {
@@ -258,6 +270,13 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
         }
         if (!currentToken.empty()) tokens.push_back(currentToken);
 
+        ImVec4 normalColor = part.HasColor ? part.TextColor : ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        ImU32 normalColU32 = ImGui::ColorConvertFloat4ToU32(normalColor);
+        ImU32 hoverColU32 = ImGui::ColorConvertFloat4ToU32(part.HoverColor);
+
+        int part_vtx_start = ImGui::GetWindowDrawList()->VtxBuffer.Size;
+        bool isPartHovered = false;
+
         for (const auto& token : tokens) {
             if (token == "\n") {
                 ImGui::NewLine();
@@ -282,63 +301,86 @@ void Label::OnDraw(const Rectangle& bounds, float scale) {
                 currentXScreen = ImGui::GetCursorScreenPos().x; // Update for the new line
             }
 
-            ImVec2 minPos = ImGui::GetCursorScreenPos();
-            ImVec2 maxPos = ImVec2(minPos.x + size.x, minPos.y + size.y);
-            
-            bool isHovered = ImGui::IsMouseHoveringRect(minPos, maxPos, true);
-
-            // Click handling
-            if (isHovered && part.IsLink && ImGui::IsMouseClicked(0)) {
-                if (!part.HrefURL.empty()) {
-                    ShellExecuteA(0, 0, part.HrefURL.c_str(), 0, 0, SW_SHOW);
-                } else if (!part.ActionID.empty() && m_actionCallbacks.count(part.ActionID)) {
-                    m_actionCallbacks[part.ActionID]();
-                }
-            }
-
-            // Colors & Hover state
-            ImVec4 renderColor = part.HasColor ? part.TextColor : ImGui::GetStyleColorVec4(ImGuiCol_Text);
-            if (isHovered && part.IsLink) {
-                renderColor = part.HoverColor;
-                ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-            }
+            int vtx_idx_start = ImGui::GetWindowDrawList()->VtxBuffer.Size;
 
             // Draw the text
             if (part.HasStroke) {
                 ImVec2 p = ImGui::GetCursorScreenPos();
                 ImU32 strokeCol = IM_COL32(0, 0, 0, 255); // black border
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
-                drawList->AddText(ImVec2(p.x - 1.0f, p.y), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x + 1.0f, p.y), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x, p.y - 1.0f), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x, p.y + 1.0f), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x - 1.0f, p.y - 1.0f), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x + 1.0f, p.y - 1.0f), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x - 1.0f, p.y + 1.0f), strokeCol, token.c_str());
-                drawList->AddText(ImVec2(p.x + 1.0f, p.y + 1.0f), strokeCol, token.c_str());
+                ImFont* font = ImGui::GetFont();
+                float font_size = ImGui::GetFontSize();
+                drawList->AddText(font, font_size, ImVec2(p.x - 1.0f, p.y), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x + 1.0f, p.y), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x, p.y + 1.0f), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x - 1.0f, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x + 1.0f, p.y - 1.0f), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x - 1.0f, p.y + 1.0f), strokeCol, token.c_str());
+                drawList->AddText(font, font_size, ImVec2(p.x + 1.0f, p.y + 1.0f), strokeCol, token.c_str());
             }
 
             if (part.IsBold) {
                 ImVec2 p = ImGui::GetCursorScreenPos();
-                ImGui::GetWindowDrawList()->AddText(ImVec2(p.x + 1.0f, p.y), ImGui::ColorConvertFloat4ToU32(renderColor), token.c_str());
+                ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(p.x + 1.0f, p.y), normalColU32, token.c_str());
             }
 
             if (part.HasColor || part.IsLink) {
-                ImGui::TextColored(renderColor, "%s", token.c_str());
+                ImGui::TextColored(normalColor, "%s", token.c_str());
             } else {
                 ImGui::Text("%s", token.c_str());
+            }
+
+            ImVec2 minPos = ImGui::GetItemRectMin();
+            ImVec2 maxPos = ImGui::GetItemRectMax();
+            ImVec2 itemSize = ImGui::GetItemRectSize();
+            
+            // Adjust hover bounds slightly downwards to better match visual font baselines
+            ImVec2 hoverMin = ImVec2(minPos.x, minPos.y + (itemSize.y * 0.15f));
+            ImVec2 hoverMax = ImVec2(maxPos.x, maxPos.y + (itemSize.y * 0.15f));
+            
+            if (part.IsLink && ImGui::IsMouseHoveringRect(hoverMin, hoverMax, true)) {
+                isPartHovered = true;
+            }
+
+            int vtx_idx_end = ImGui::GetWindowDrawList()->VtxBuffer.Size;
+
+            if (part.IsItalic) {
+                float f_size = ImGui::GetFontSize();
+                for (int vtx = vtx_idx_start; vtx < vtx_idx_end; ++vtx) {
+                    ImDrawVert& v = ImGui::GetWindowDrawList()->VtxBuffer[vtx];
+                    v.pos.x += (v.pos.y - (minPos.y + f_size)) * -0.22f;
+                }
             }
 
             isFirstTokenOnLine = false;
 
             // Draw Decorations
             if (part.IsUnderlined || part.IsLink) {
-                drawList->AddLine(ImVec2(minPos.x, maxPos.y), ImVec2(maxPos.x, maxPos.y), ImGui::ColorConvertFloat4ToU32(renderColor), 2.0f);
+                ImGui::GetWindowDrawList()->AddLine(ImVec2(minPos.x, maxPos.y), ImVec2(maxPos.x, maxPos.y), normalColU32, 2.0f);
             }
             if (part.IsStrikeThrough) {
                 // Shift down slightly because lowercase letters sit lower in the vertical space
-                float midY = minPos.y + (size.y * 0.65f);
-                drawList->AddLine(ImVec2(minPos.x, midY), ImVec2(maxPos.x, midY), ImGui::ColorConvertFloat4ToU32(renderColor), 2.0f);
+                float midY = minPos.y + (size.y * 0.55f);
+                ImGui::GetWindowDrawList()->AddLine(ImVec2(minPos.x, midY), ImVec2(maxPos.x, midY), normalColU32, 2.0f);
+            }
+        }
+        
+        if (isPartHovered) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            if (ImGui::IsMouseClicked(0)) {
+                if (!part.HrefURL.empty()) {
+                    ShellExecuteA(0, 0, part.HrefURL.c_str(), 0, 0, SW_SHOW);
+                } else if (!part.ActionID.empty() && m_actionCallbacks.count(part.ActionID)) {
+                    m_actionCallbacks[part.ActionID]();
+                }
+            }
+            
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            for (int vtx = part_vtx_start; vtx < drawList->VtxBuffer.Size; ++vtx) {
+                if (drawList->VtxBuffer[vtx].col == normalColU32) {
+                    drawList->VtxBuffer[vtx].col = hoverColU32;
+                }
             }
         }
     }

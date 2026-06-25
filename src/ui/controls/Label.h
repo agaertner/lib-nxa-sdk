@@ -31,6 +31,7 @@ struct LabelPart {
     bool IsUnderlined = false;
     bool IsStrikeThrough = false;
     bool IsBold = false;
+    bool IsItalic = false;
     bool HasStroke = false;
 
     ImVec2 CalcSize(ImFont* fallbackFont) const;

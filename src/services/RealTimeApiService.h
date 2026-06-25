@@ -1,6 +1,6 @@
 #ifndef REALTIMEAPISERVICE_H
 #define REALTIMEAPISERVICE_H
-#include <nexus-core/Nexus.h>
+#include <Nexus.h>
 #include "../../nexus-rtapi/RTAPI.h"
 
 namespace NexusSDK::Services

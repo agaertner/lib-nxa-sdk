@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
-#include <nexus-imgui/imgui.h>
+#include <imgui.h>
 #include "../../utils/ImID.h"
 #include "../../utils/ImStateGuards.h"
 #include "../../services/NexusService.h"
