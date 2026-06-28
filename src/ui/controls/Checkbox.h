@@ -22,14 +22,14 @@ public:
     std::function<void(bool)> OnCheckedChanged;
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+    virtual void OnDraw(const Rectangle& bounds) override;
 
-    virtual ImVec2 GetAutoSize(float scale) const override {
+    virtual ImVec2 GetAutoSize() const override {
         ImVec2 size(0, 32.0f);
         if (TextLabel) {
             float spacing = 4.0f;
             ImVec2 textSize = TextLabel->CalcSize();
-            size.x = 32.0f + spacing + (textSize.x / scale);
+            size.x = 32.0f + spacing + (textSize.x / UIScale::Get());
         } else {
             size.x = 32.0f;
         }

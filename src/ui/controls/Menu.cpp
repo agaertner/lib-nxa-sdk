@@ -1,16 +1,16 @@
 #include "Menu.h"
 #include <NexusSDK.h>
 #include "../../utils/ImStateGuards.h"
+#include "../SpriteBatch.h"
 
 #include <cstdlib>
 
 namespace NexusSDK {
 namespace UI {
 
-void Menu::OnDraw(const Rectangle& bounds, float scale) {
-    ImGui::SetCursorScreenPos(bounds.GetMin());
-
-    Color bgGuard(BackgroundColor.w > 0.0f, ImGuiCol_ChildBg, BackgroundColor);
+void Menu::OnDraw(const Rectangle& bounds) {
+    float scale = UIScale::Get();
+    ColorGuard bg(BackgroundColor.w > 0.0f, ImGuiCol_ChildBg, BackgroundColor);
     
     bool isVisible = ImGui::BeginChild(m_id.c_str(), ImVec2(bounds.Width, bounds.Height), true, BackgroundColor.w == 0.0f ? ImGuiWindowFlags_NoBackground : 0);
 
@@ -38,13 +38,13 @@ void Menu::OnDraw(const Rectangle& bounds, float scale) {
             bool isSelected = (SelectedIndex == static_cast<int>(i));
             ImVec2 cursorPos = ImGui::GetCursorScreenPos();
         
-            Color headerGuard(isSelected, ImGuiCol_Header, 0.0f, 0.0f, 0.0f, 0.0f);
-            Color headerHoveredGuard(ImGuiCol_HeaderHovered, 1.0f, 1.0f, 1.0f, 0.05f);
-            Color headerActiveGuard(isSelected, ImGuiCol_HeaderActive, 1.0f, 1.0f, 1.0f, 0.05f);
-            Color textGuard(ImGuiCol_Text, isSelected ? AccentColor : TextUnselectedColor);
+            ColorGuard header(isSelected, ImGuiCol_Header, 0.0f, 0.0f, 0.0f, 0.0f);
+            ColorGuard headerHovered(ImGuiCol_HeaderHovered, 1.0f, 1.0f, 1.0f, 0.05f);
+            ColorGuard headerActive(isSelected, ImGuiCol_HeaderActive, 1.0f, 1.0f, 1.0f, 0.05f);
+            ColorGuard text(ImGuiCol_Text, isSelected ? AccentColor : TextUnselectedColor);
 
             std::string label = "    " + Tabs[i].Name;
-            Style alignGuard(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
+            StyleGuard align(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
             if (ImGui::Selectable(label.c_str(), isSelected, 0, ImVec2(0, scaledItemHeight))) {
                 if (SelectedIndex != static_cast<int>(i)) {
                     SelectedIndex = static_cast<int>(i);
@@ -60,10 +60,10 @@ void Menu::OnDraw(const Rectangle& bounds, float scale) {
             }
 
             if (isSelected && ShowAccentBar) {
-                ImGui::GetWindowDrawList()->AddRectFilled(
+                SpriteBatch::DrawFilledRect(
                     ImVec2(cursorPos.x, cursorPos.y), 
                     ImVec2(cursorPos.x + (3.0f * scale), cursorPos.y + scaledItemHeight), 
-                    ImGui::GetColorU32(AccentColor)
+                    ImColor(AccentColor)
                 );
             }
         } // closes for loop

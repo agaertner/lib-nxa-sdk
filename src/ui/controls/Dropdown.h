@@ -35,14 +35,14 @@ namespace UI {
             }
         }
 
-        void OnDraw(const Rectangle& bounds, float scale) override;
+        void OnDraw(const Rectangle& bounds) override;
 
-        virtual ImVec2 GetAutoSize(float scale) const override {
+        virtual ImVec2 GetAutoSize() const override {
             ImVec2 size(150.0f, ImGui::GetTextLineHeightWithSpacing() + 4.0f);
             if (TextLabel) {
                 float spacing = 8.0f;
                 ImVec2 textSize = TextLabel->CalcSize();
-                size.x += (textSize.x / scale) + spacing;
+                size.x += (textSize.x / UIScale::Get()) + spacing;
             }
             return size;
         }

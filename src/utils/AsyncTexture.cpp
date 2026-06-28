@@ -5,12 +5,24 @@ namespace NexusSDK {
 
     AsyncTexture::AsyncTexture(const std::string& identifier, const std::string& resourceName, AddonAPI_t* api, HMODULE moduleHandle)
         : m_identifier(identifier), m_resourceName(resourceName),
-          m_api(api), m_moduleHandle(moduleHandle), m_texture(nullptr), m_isLoadRequested(false)
+          m_api(api), m_moduleHandle(moduleHandle), m_texture(nullptr), m_isLoadRequested(false), m_isOwned(true)
     {
     }
 
+    AsyncTexture::AsyncTexture(Texture_t* unownedTexture)
+        : m_identifier(""), m_resourceName(""), m_api(nullptr), m_moduleHandle(nullptr), m_texture(unownedTexture), m_isLoadRequested(true), m_isOwned(false)
+    {
+    }
+
+    AsyncTexture::~AsyncTexture() {
+        if (m_isOwned) {
+            m_texture = nullptr;
+            m_isLoadRequested = false;
+        }
+    }
+
     void AsyncTexture::Load() {
-        if (m_isLoadRequested) return;
+        if (!m_isOwned || m_isLoadRequested) return;
 
         HRSRC hRes = FindResourceA(m_moduleHandle, m_resourceName.c_str(), (LPCSTR)RT_RCDATA);
 
@@ -26,8 +38,10 @@ namespace NexusSDK {
     }
 
     Texture_t* AsyncTexture::Get() {
+        if (!m_isOwned) return m_texture;
+
         if (!m_isLoadRequested) {
-            return nullptr;
+            Load();
         }
 
         if (!m_texture || !m_texture->Resource) {
@@ -37,9 +51,14 @@ namespace NexusSDK {
         return m_texture;
     }
 
-    void AsyncTexture::Dispose() {
-        m_texture = nullptr;
-        m_isLoadRequested = false;
+    int AsyncTexture::GetWidth() {
+        Texture_t* tex = Get();
+        return tex ? static_cast<int>(tex->Width) : 0;
+    }
+
+    int AsyncTexture::GetHeight() {
+        Texture_t* tex = Get();
+        return tex ? static_cast<int>(tex->Height) : 0;
     }
 
 }

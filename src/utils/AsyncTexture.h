@@ -8,11 +8,13 @@ namespace NexusSDK {
     class AsyncTexture {
     public:
         AsyncTexture(const std::string& identifier, const std::string& resourceName, AddonAPI_t* api, HMODULE moduleHandle);
-        ~AsyncTexture() = default;
+        AsyncTexture(Texture_t* unownedTexture);
+        ~AsyncTexture();
 
         void Load();
         Texture_t* Get();
-        void Dispose();
+        int GetWidth();
+        int GetHeight();
 
     private:
         std::string m_identifier;
@@ -22,6 +24,7 @@ namespace NexusSDK {
 
         Texture_t* m_texture;
         bool m_isLoadRequested;
+        bool m_isOwned;
     };
 }
 

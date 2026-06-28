@@ -5,20 +5,20 @@
 #include <string>
 #include <map>
 
+struct ImFont;
+
 namespace NexusSDK {
     class AsyncFont {
     public:
         AsyncFont(const std::string& identifier, const std::string& resourceName, float fontSize, AddonAPI_t* api, HMODULE moduleHandle);
+        AsyncFont(ImFont* unownedFont);
         ~AsyncFont();
 
         // Requests Nexus to load the font from the resource
         void Load();
 
         // Returns the ImFont* if it has been loaded and initialized
-        void* Get();
-
-        // Releases the font from Nexus
-        void Dispose();
+        ImFont* Get();
 
     private:
         std::string m_identifier;
@@ -28,6 +28,8 @@ namespace NexusSDK {
         HMODULE m_moduleHandle;
 
         bool m_isLoadRequested;
+        bool m_isOwned;
+        ImFont* m_unownedFont;
 
         static std::map<std::string, void*> s_loadedFonts;
         static void FontReceiveCallback(const char* identifier, void* font);

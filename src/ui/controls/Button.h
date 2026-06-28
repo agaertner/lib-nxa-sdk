@@ -16,19 +16,14 @@ public:
 
     std::shared_ptr<Label> TextLabel;
     std::function<void()> OnClick;
-
-    float Width = 128.0f;
-    float Height = 26.0f;
-
+    
     bool ForceHover = false;
     void ForceClick();
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+    virtual void OnDraw(const Rectangle& bounds) override;
 
-    virtual ImVec2 GetAutoSize(float scale) const override {
-        return ImVec2(Width, Height);
-    }
+
 
     virtual void DoMouseLeftDown(const MouseEventArgs& args) override;
     virtual void DoMouseLeftUp(const MouseEventArgs& args) override;

@@ -7,10 +7,16 @@
 #include <imgui.h>
 #include "../../utils/ImID.h"
 #include "../../utils/ImStateGuards.h"
+
+#include "../UIScale.h"
 #include "../../services/NexusService.h"
+
+#include "../../utils/AsyncFont.h"
 
 namespace NexusSDK {
 namespace UI {
+
+class Container;
 
 enum class CaptureType {
     None = 0,
@@ -18,11 +24,27 @@ enum class CaptureType {
     Filter = 2
 };
 
+enum class Alignment {
+    Start = 0,
+    Center = 1,
+    End = 2
+};
+
 struct Rectangle {
     float X, Y, Width, Height;
 
     ImVec2 GetMin() const { return ImVec2(X, Y); }
     ImVec2 GetMax() const { return ImVec2(X + Width, Y + Height); }
+
+    Rectangle ToBounds(const Rectangle& localBounds) const {
+        float scale = UIScale::Get();
+        return {
+            X + (localBounds.X * scale),
+            Y + (localBounds.Y * scale),
+            localBounds.Width * scale,
+            localBounds.Height * scale
+        };
+    }
 };
 
 struct MouseEventArgs {
@@ -40,7 +62,10 @@ public:
     // Retained State
     float Opacity = 1.0f;
     CaptureType InputCapture = CaptureType::Capture;
-    ImFont* Font = nullptr;
+    AsyncFont* Font = nullptr;
+    Alignment HorizontalAlignment = Alignment::Start;
+    Alignment VerticalAlignment = Alignment::Start;
+    bool IgnoreLayoutCursor = false;
     
     void SetVisible(bool visible) { m_visible = visible; }
     bool IsVisible() const { return m_visible; }
@@ -48,50 +73,46 @@ public:
     void SetPosition(ImVec2 pos) { m_position = pos; }
     void SetPosition(float x, float y) { SetPosition(ImVec2(x, y)); }
     ImVec2 GetPosition() const { return m_position; }
+    
+    // Layout Helpers
+    float Left() const { return m_position.x; }
+    void Left(float x) { m_position.x = x; }
+    float Top() const { return m_position.y; }
+    void Top(float y) { m_position.y = y; }
 
     void SetSize(ImVec2 size) { m_size = size; }
     void SetSize(float width, float height) { SetSize(ImVec2(width, height)); }
     
-    virtual ImVec2 GetAutoSize(float scale) const {
+    float Width() const { return m_size.x; }
+    void Width(float w) { m_size.x = w; }
+    float Height() const { return m_size.y; }
+    void Height(float h) { m_size.y = h; }
+    
+    virtual ImVec2 GetAutoSize() const {
         return ImVec2(0.0f, 0.0f);
     }
 
-    ImVec2 GetSize(float scale = 1.0f) const {
+    ImVec2 GetSize() const {
         ImVec2 size = m_size;
-        ImVec2 autoSize = GetAutoSize(scale);
+        ImVec2 autoSize = GetAutoSize();
         if (size.x <= 0.0f) size.x = autoSize.x;
         if (size.y <= 0.0f) size.y = autoSize.y;
         return size;
     }
     
     Rectangle GetBounds() const { return { m_position.x, m_position.y, m_size.x, m_size.y }; }
+    Rectangle GetAbsoluteBounds() const { return m_absoluteBounds; }
 
-    void AddChild(std::shared_ptr<ControlBase> child) {
-        child->m_parent = weak_from_this();
-        m_children.push_back(child);
+    Container* GetParent() const {
+        return m_parent;
     }
 
-    void ClearChildren() {
-        m_children.clear();
-    }
-
-    void RemoveChild(std::shared_ptr<ControlBase> child) {
-        auto it = std::find(m_children.begin(), m_children.end(), child);
-        if (it != m_children.end()) {
-            (*it)->m_parent.reset();
-            m_children.erase(it);
-        }
-    }
-
-    std::shared_ptr<ControlBase> GetParent() const {
-        return m_parent.lock();
-    }
+    void SetParent(Container* parent);
 
     const std::string& GetID() const { return m_id; }
-    const std::vector<std::shared_ptr<ControlBase>>& GetChildren() const { return m_children; }
 
     // Tooltips
-    std::shared_ptr<ControlBase> BasicTooltip;
+    std::shared_ptr<ControlBase> Tooltip;
     float TooltipDelay = 0.5f;
 
     // Functional Callbacks
@@ -117,13 +138,6 @@ public:
     virtual CaptureType HitTest(ImVec2 mousePos) {
         if (!m_visible || Opacity <= 0.0f) return CaptureType::None;
 
-        for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-            CaptureType childResult = (*it)->HitTest(mousePos);
-            if (childResult != CaptureType::None) {
-                return childResult;
-            }
-        }
-
         if (m_absoluteBounds.Width > 0 && m_absoluteBounds.Height > 0) {
             if (mousePos.x >= m_absoluteBounds.X && mousePos.x <= (m_absoluteBounds.X + m_absoluteBounds.Width) &&
                 mousePos.y >= m_absoluteBounds.Y && mousePos.y <= (m_absoluteBounds.Y + m_absoluteBounds.Height)) {
@@ -135,44 +149,66 @@ public:
     }
 
     // The main render pass
-    virtual void Draw(const Rectangle& bounds, float scale) {
-        m_absoluteBounds = bounds;
+    void Draw(const Rectangle& bounds) {
+        float scale = UIScale::Get();
+        ImVec2 unscaledSize = GetSize();
+        float actualW = unscaledSize.x * scale;
+        float actualH = unscaledSize.y * scale;
+
+        float finalX = bounds.X;
+        float finalY = bounds.Y;
+        float finalW = bounds.Width;
+        float finalH = bounds.Height;
+
+        if (actualW > 0.0f) {
+            if (HorizontalAlignment == Alignment::Center) {
+                finalW = actualW;
+                finalX = bounds.X + (bounds.Width - finalW) / 2.0f;
+            } else if (HorizontalAlignment == Alignment::End) {
+                finalW = actualW;
+                finalX = bounds.X + bounds.Width - finalW;
+            }
+        }
+
+        if (actualH > 0.0f) {
+            if (VerticalAlignment == Alignment::Center) {
+                finalH = actualH;
+                finalY = bounds.Y + (bounds.Height - finalH) / 2.0f;
+            } else if (VerticalAlignment == Alignment::End) {
+                finalH = actualH;
+                finalY = bounds.Y + bounds.Height - finalH;
+            }
+        }
+
+        m_absoluteBounds = { finalX, finalY, finalW, finalH };
         
         if (!m_visible || Opacity <= 0.0f) return;
 
-        ID idGuard(m_id.c_str());
+        IDGuard id(m_id.c_str());
         
-        ImFont* fontToUse = this->Font;
+        ImFont* fontToUse = this->Font ? this->Font->Get() : nullptr;
         if (!fontToUse && Services::NexusService::Get()) {
             fontToUse = Services::NexusService::Get()->FontUI();
         }
-        struct Font fontGuard(fontToUse);
+        FontGuard font(fontToUse);
         
-        Style alphaGuard(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * Opacity);
+        StyleGuard alpha(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * Opacity);
+
+        // Position the ImGui cursor at this control's screen-space origin (if we belong to the layout engine)
+        if (!IgnoreLayoutCursor) {
+            ImGui::SetCursorScreenPos(m_absoluteBounds.GetMin());
+        }
 
         // Call the derived class's actual drawing logic
-        OnDraw(bounds, scale);
+        OnDraw(m_absoluteBounds);
 
-        HandleMouseEvents(bounds, scale);
+        HandleMouseEvents(m_absoluteBounds);
     }
 
 protected:
     // Derived classes can override this to implement custom rendering logic.
-    // Containers should call DrawChildren() inside their overridden OnDraw().
-    virtual void OnDraw(const Rectangle& bounds, float scale) {
-        DrawChildren(bounds, scale);
-    }
-
-    void DrawChildren(const Rectangle& parentBounds, float scale) {
-        for (auto& child : m_children) {
-            Rectangle childBounds;
-            childBounds.X = parentBounds.X + (child->GetPosition().x * scale);
-            childBounds.Y = parentBounds.Y + (child->GetPosition().y * scale);
-            childBounds.Width = child->GetSize(scale).x * scale;
-            childBounds.Height = child->GetSize(scale).y * scale;
-            
-            child->Draw(childBounds, scale);
-        }
+    virtual void OnDraw(const Rectangle& bounds) {
+        // Base implementation does nothing.
     }
 
     std::string m_id;
@@ -184,11 +220,10 @@ protected:
     bool m_isHovered = false;
     float m_hoverTime = 0.0f;
 
-    std::vector<std::shared_ptr<ControlBase>> m_children;
-    std::weak_ptr<ControlBase> m_parent;
+    Container* m_parent = nullptr;
 
 private:
-    void HandleMouseEvents(const Rectangle& bounds, float scale) {
+    void HandleMouseEvents(const Rectangle& bounds) {
         // Event bounds check relies on size.
         if (bounds.Width > 0 && bounds.Height > 0) {
             ImVec2 minScreenPos = bounds.GetMin();
@@ -216,13 +251,14 @@ private:
 
                 // Tooltip Rendering
                 m_hoverTime += ImGui::GetIO().DeltaTime;
-                if (m_hoverTime >= TooltipDelay && BasicTooltip) {
+                if (m_hoverTime >= TooltipDelay && Tooltip) {
+                    float scale = UIScale::Get();
                     Rectangle tooltipBounds;
                     tooltipBounds.X = mousePos.x + (15.0f * scale);
                     tooltipBounds.Y = mousePos.y + (15.0f * scale);
-                    tooltipBounds.Width = BasicTooltip->GetSize(scale).x * scale;
-                    tooltipBounds.Height = BasicTooltip->GetSize(scale).y * scale;
-                    BasicTooltip->Draw(tooltipBounds, scale);
+                    tooltipBounds.Width = Tooltip->GetSize().x * scale;
+                    tooltipBounds.Height = Tooltip->GetSize().y * scale;
+                    Tooltip->Draw(tooltipBounds);
                 }
 
                 // Continuous: Moved

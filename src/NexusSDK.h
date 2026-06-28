@@ -14,6 +14,7 @@
 // UI Framework
 #include "ui/controls/ControlBase.h"
 #include "ui/Viewport.h"
+#include "ui/UIScale.h"
 #include "ui/controls/Label.h"
 #include "ui/controls/Container.h"
 #include "ui/controls/Tooltip.h"
@@ -121,6 +122,7 @@ namespace NexusSDK {
                 uiScale = Nexus->Core()->Scaling;
             }
         }
+        NexusSDK::UI::UIScale::Set(uiScale);
         NexusSDK::UI::Viewport::Render(uiScale);
     }
 }

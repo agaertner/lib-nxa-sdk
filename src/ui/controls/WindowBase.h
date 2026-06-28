@@ -2,6 +2,7 @@
 
 #include "Container.h"
 #include "../../utils/AsyncTexture.h"
+#include "../SpriteBatch.h"
 #include <imgui.h>
 #include <functional>
 #include <algorithm>
@@ -36,8 +37,9 @@ public:
     std::function<void()> OnClose;
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override {
+    virtual void OnDraw(const Rectangle& bounds) override {
         if (!IsOpen) return;
+        float scale = UIScale::Get();
 
         // We disable the native title bar to draw our own. 
         // We disable native resize to use our custom bottom-right corner textures.
@@ -59,16 +61,13 @@ protected:
             m_size.y = scaledSize.y / scale;
             m_position.x = scaledPos.x / scale;
             m_position.y = scaledPos.y / scale;
-            
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
 
             // 1. Draw Custom Background
             if (BackgroundTexture && BackgroundTexture->Get()) {
-                drawList->AddImage(
-                    (ImTextureID)BackgroundTexture->Get(),
+                SpriteBatch::DrawTexture(
+                    BackgroundTexture.get(),
                     scaledPos,
-                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y),
-                    ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
+                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y)
                 );
             }
 
@@ -79,24 +78,23 @@ protected:
             std::shared_ptr<AsyncTexture> tbTex = isFocused ? TitlebarActiveTexture : TitlebarInactiveTexture;
             
             if (tbTex && tbTex->Get()) {
-                drawList->AddImage(
-                    (ImTextureID)tbTex->Get(),
+                SpriteBatch::DrawTexture(
+                    tbTex.get(),
                     scaledPos,
-                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + titlebarHeightScaled),
-                    ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
+                    ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + titlebarHeightScaled)
                 );
             } else {
                 // Native fallback for titlebar: Draw a rect
-                drawList->AddRectFilled(
+                SpriteBatch::DrawFilledRect(
                     scaledPos, 
                     ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + titlebarHeightScaled), 
-                    ImGui::GetColorU32(isFocused ? ImGuiCol_TitleBgActive : ImGuiCol_TitleBg)
+                    ImColor(ImGui::GetColorU32(isFocused ? ImGuiCol_TitleBgActive : ImGuiCol_TitleBg))
                 );
             }
 
             // 3. Draw Title Text
             if (!Title.empty()) {
-                drawList->AddText(ImVec2(scaledPos.x + (15.0f * scale), scaledPos.y + (10.0f * scale)), ImColor(255, 255, 255), Title.c_str());
+                SpriteBatch::DrawString(Title, this->Font ? this->Font : nullptr, ImVec2(scaledPos.x + (15.0f * scale), scaledPos.y + (10.0f * scale)));
             }
 
             // 4. Custom Dragging Area (Titlebar)
@@ -117,7 +115,7 @@ protected:
                 clientBounds.Y = scrolledPos.y;
                 clientBounds.Width = scaledSize.x;
                 clientBounds.Height = scaledSize.y - titlebarHeightScaled;
-                DrawChildren(clientBounds, scale);
+                DrawChildren(clientBounds);
             }
             ImGui::EndChild();
 
@@ -136,19 +134,20 @@ protected:
                 else if (isHovered) resizeTex = ResizeHoverTexture;
 
                 if (resizeTex && resizeTex->Get()) {
-                    drawList->AddImage(
-                        (ImTextureID)resizeTex->Get(),
+                    SpriteBatch::DrawTexture(
+                        resizeTex.get(),
                         ImVec2(scaledPos.x + gripLocalPos.x, scaledPos.y + gripLocalPos.y),
-                        ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y),
-                        ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE)
+                        ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y)
                     );
                 } else {
                     // Fallback to a simple drawn triangle
-                    ImU32 gripColor = ImGui::GetColorU32(isActive ? ImGuiCol_ResizeGripActive : (isHovered ? ImGuiCol_ResizeGripHovered : ImGuiCol_ResizeGrip));
-                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x - gripSizeScaled, scaledPos.y + scaledSize.y));
-                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y));
-                    drawList->PathLineTo(ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y - gripSizeScaled));
-                    drawList->PathFillConvex(gripColor);
+                    ImColor gripColor(ImGui::GetColorU32(isActive ? ImGuiCol_ResizeGripActive : (isHovered ? ImGuiCol_ResizeGripHovered : ImGuiCol_ResizeGrip)));
+                    SpriteBatch::DrawTriangleFilled(
+                        ImVec2(scaledPos.x + scaledSize.x - gripSizeScaled, scaledPos.y + scaledSize.y),
+                        ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y),
+                        ImVec2(scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y - gripSizeScaled),
+                        gripColor
+                    );
                 }
 
                 // Handle manual resizing

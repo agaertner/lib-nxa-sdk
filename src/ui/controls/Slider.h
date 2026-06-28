@@ -27,14 +27,14 @@ public:
     std::function<void(float)> OnValueChanged;
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override;
+    virtual void OnDraw(const Rectangle& bounds) override;
 
-    virtual ImVec2 GetAutoSize(float scale) const override {
+    virtual ImVec2 GetAutoSize() const override {
         ImVec2 size(200.0f, 24.0f);
         if (TextLabel && LabelWidth == 0.0f) {
             float spacing = 8.0f;
             ImVec2 textSize = TextLabel->CalcSize();
-            size.x += (textSize.x / scale) + spacing;
+            size.x += (textSize.x / UIScale::Get()) + spacing;
         } else if (LabelWidth > 0.0f) {
             size.x += LabelWidth;
         }

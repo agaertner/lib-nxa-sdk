@@ -1,7 +1,7 @@
 #include "../../nexus-sdk-resource.h"
 #include "Slider.h"
 #include <NexusSDK.h>
-
+#include "../SpriteBatch.h"
 
 #include <imgui.h>
 #include <algorithm>
@@ -11,39 +11,44 @@
 namespace NexusSDK {
 namespace UI {
 
-
-
-    void Slider::OnDraw(const Rectangle& bounds, float scale) {
+    void Slider::OnDraw(const Rectangle& bounds) {
         if (!Value) return;
+        float scale = UIScale::Get();
 
-        float height = 24.0f * scale;
+        float unscaledHeight = 24.0f;
+        float height = unscaledHeight * scale;
         ImVec2 pos = bounds.GetMin();
         float width = bounds.Width > 0.0f ? bounds.Width : 200.0f * scale;
+        float unscaledWidth = bounds.Width > 0.0f ? (bounds.Width / scale) : 200.0f;
 
         if (TextLabel) {
-            float spacing = 8.0f * scale;
+            float unscaledSpacing = 8.0f;
             ImVec2 textSize = TextLabel->CalcSize();
-            float offset = (height - textSize.y) / 2.0f;
+            float unscaledOffset = (unscaledHeight - textSize.y) / 2.0f;
             
             Rectangle textBounds;
             textBounds.X = pos.x;
-            textBounds.Y = pos.y + offset;
-            textBounds.Width = LabelWidth > 0.0f ? LabelWidth * scale : textSize.x;
-            textBounds.Height = textSize.y;
+            textBounds.Y = pos.y + (unscaledOffset * scale);
+            textBounds.Width = LabelWidth > 0.0f ? LabelWidth * scale : textSize.x * scale;
+            textBounds.Height = textSize.y * scale;
             
-            TextLabel->Draw(textBounds, scale);
+            TextLabel->Draw(textBounds);
             
-            float labelSpace = LabelWidth > 0.0f ? LabelWidth * scale : textSize.x + spacing;
+            float labelSpace = LabelWidth > 0.0f ? LabelWidth * scale : (textSize.x + unscaledSpacing) * scale;
             pos.x += labelSpace;
             width -= labelSpace;
+            unscaledWidth -= (labelSpace / scale);
         }
 
         ImGui::SetCursorScreenPos(pos);
 
-        float nubSize = 20.0f * scale;
-        float capW = 4.0f * scale;
-        float boundW = 3.0f * scale;
+        float unscaledNubSize = 20.0f;
+        float nubSize = unscaledNubSize * scale;
+        float unscaledCapW = 4.0f;
+        float unscaledBoundW = 3.0f;
+        float boundW = unscaledBoundW * scale;
         float usableWidth = width - (2.0f * boundW) - nubSize;
+        float unscaledUsableWidth = unscaledWidth - (2.0f * unscaledBoundW) - unscaledNubSize;
 
         ImGui::InvisibleButton(m_id.c_str(), ImVec2(width, height));
         bool isActive = ImGui::IsItemActive();
@@ -59,51 +64,58 @@ namespace UI {
             }
         }
 
+        float localX = (pos.x - bounds.GetMin().x) / scale;
+        float localY = 0.0f;
+
         // Draw track
-        Texture_t* texTrack = NexusSDK::Content->GetTexture(IDB_TRACKBAR_ATLAS_BG);
-        if (texTrack) {
-            float trackHeight = 16.0f * scale;
-            
-            ImVec2 tPos = ImVec2(pos.x, pos.y + (height - trackHeight) / 2.0f);
+        AsyncTexture* texTrackAsync = NexusSDK::Content->GetTexture(IDB_TRACKBAR_ATLAS_BG);
+        if (texTrackAsync && texTrackAsync->GetWidth() > 0) {
+            float unscaledTrackHeight = 16.0f;
+            float tPosY = localY + (unscaledHeight - unscaledTrackHeight) / 2.0f;
+            float texW = (float)texTrackAsync->GetWidth();
+            float texH = (float)texTrackAsync->GetHeight();
             
             // Left cap
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
-                tPos, ImVec2(tPos.x + capW, tPos.y + trackHeight),
-                ImVec2(0, 0), ImVec2(4.0f / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTextureOnCtrl(this, texTrackAsync, 
+                Rectangle{localX, tPosY, unscaledCapW, unscaledTrackHeight}, 
+                Rectangle{0, 0, (4.0f / 256.0f) * texW, texH}, IM_COL32_WHITE);
                 
             // Middle
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
-                ImVec2(tPos.x + capW, tPos.y), ImVec2(tPos.x + width - capW, tPos.y + trackHeight),
-                ImVec2(4.0f / 256.0f, 0), ImVec2((256.0f - 4.0f) / 256.0f, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTextureOnCtrl(this, texTrackAsync, 
+                Rectangle{localX + unscaledCapW, tPosY, unscaledWidth - (2*unscaledCapW), unscaledTrackHeight}, 
+                Rectangle{(4.0f / 256.0f) * texW, 0, ((256.0f - 8.0f) / 256.0f) * texW, texH}, IM_COL32_WHITE);
                 
             // Right cap
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texTrack->Resource, 
-                ImVec2(tPos.x + width - capW, tPos.y), ImVec2(tPos.x + width, tPos.y + trackHeight),
-                ImVec2((256.0f - 4.0f) / 256.0f, 0), ImVec2(1, 1), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTextureOnCtrl(this, texTrackAsync, 
+                Rectangle{localX + unscaledWidth - unscaledCapW, tPosY, unscaledCapW, unscaledTrackHeight}, 
+                Rectangle{((256.0f - 4.0f) / 256.0f) * texW, 0, (4.0f / 256.0f) * texW, texH}, IM_COL32_WHITE);
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + height), ImGui::GetColorU32(IM_COL32(50,50,50,255)));
+            SpriteBatch::DrawFilledRectOnCtrl(this, Rectangle{localX, localY, unscaledWidth, unscaledHeight}, IM_COL32(50,50,50,255));
         }
 
         // Draw nub
-        Texture_t* texNub = NexusSDK::Content->GetTexture(IDB_TRACKBAR_NUB);
+        AsyncTexture* texNubAsync = NexusSDK::Content->GetTexture(IDB_TRACKBAR_NUB);
         float percent = std::clamp((*Value - Min) / (Max - Min), 0.0f, 1.0f);
-        float nubCenter = pos.x + boundW + (nubSize / 2.0f) + (usableWidth * percent);
-        ImVec2 nubMin = ImVec2(nubCenter - nubSize / 2.0f, pos.y + (height - nubSize) / 2.0f);
-        ImVec2 nubMax = ImVec2(nubMin.x + nubSize, nubMin.y + nubSize);
+        float unscaledNubCenter = localX + unscaledBoundW + (unscaledNubSize / 2.0f) + (unscaledUsableWidth * percent);
+        float nubMinX = unscaledNubCenter - unscaledNubSize / 2.0f;
+        float nubMinY = localY + (unscaledHeight - unscaledNubSize) / 2.0f;
 
-        if (texNub) {
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)texNub->Resource, nubMin, nubMax, ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
+        if (texNubAsync && texNubAsync->GetWidth() > 0) {
+            SpriteBatch::DrawTextureOnCtrl(this, texNubAsync, Rectangle{nubMinX, nubMinY, unscaledNubSize, unscaledNubSize});
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(nubMin, nubMax, ImGui::GetColorU32(IM_COL32(200,200,200,255)));
+            SpriteBatch::DrawFilledRectOnCtrl(this, Rectangle{nubMinX, nubMinY, unscaledNubSize, unscaledNubSize}, IM_COL32(200,200,200,255));
         }
 
         char valBuf[32];
         snprintf(valBuf, 32, Format.c_str(), *Value);
-        ImVec2 valSize = ImGui::CalcTextSize(valBuf);
-        ImVec2 valPos = ImVec2(pos.x + (width - valSize.x) / 2.0f, pos.y + (height - valSize.y) / 2.0f);
-        // Draw with drop shadow for readability
-        ImGui::GetWindowDrawList()->AddText(ImVec2(valPos.x + 1, valPos.y + 1), ImGui::GetColorU32(IM_COL32(0,0,0,255)), valBuf);
-        ImGui::GetWindowDrawList()->AddText(valPos, ImGui::GetColorU32(IM_COL32(255,255,255,255)), valBuf);
+        ImVec2 valSize = SpriteBatch::MeasureString(valBuf);
+        ImVec2 valPos = ImVec2(localX + (unscaledWidth - valSize.x) / 2.0f, localY + (unscaledHeight - valSize.y) / 2.0f);
+        
+        std::string shadowText = "<c=#000000>" + std::string(valBuf) + "</c>";
+        std::string whiteText = "<c=#FFFFFF>" + std::string(valBuf) + "</c>";
+        
+        SpriteBatch::DrawStringOnCtrl(this, shadowText, nullptr, ImVec2(valPos.x + 1.0f/scale, valPos.y + 1.0f/scale));
+        SpriteBatch::DrawStringOnCtrl(this, whiteText, nullptr, valPos);
     }
 
 }

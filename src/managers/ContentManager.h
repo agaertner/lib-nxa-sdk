@@ -14,8 +14,8 @@ namespace NexusSDK {
         ContentManager(AddonAPI_t* api, HMODULE moduleHandle);
         ~ContentManager();
 
-        Texture_t* GetTexture(const std::string& resourceName);
-        ImFont* GetFont(const std::string& resourceName, float fontSize);
+        AsyncTexture* GetTexture(const std::string& resourceName);
+        AsyncFont* GetFont(const std::string& resourceName, float fontSize);
 
         void Clear();
 

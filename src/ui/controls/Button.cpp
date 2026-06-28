@@ -15,18 +15,19 @@ namespace UI {
         m_id = id;
         TextLabel = std::make_shared<Label>("<c=#000000>" + text + "</c>");
         TextLabel->WrapText = false; // Buttons usually don't wrap
+        TextLabel->HorizontalAlignment = Alignment::Center;
+        TextLabel->VerticalAlignment = Alignment::Center;
+        
+        SetSize(128.0f, 26.0f);
         
         // Button handles input natively via InvisibleButton now, ignore ControlBase events
         InputCapture = CaptureType::None;
     }
 
-    void Button::OnDraw(const Rectangle& bounds, float scale) {
-        ImVec2 pos = bounds.GetMin();
-        ImVec2 size = ImVec2(bounds.Width, bounds.Height);
-
+    void Button::OnDraw(const Rectangle& bounds) {
+        float scale = UIScale::Get();
         // Natively intercept input using InvisibleButton to completely bypass ControlBase/Modal anomalies
-        ImGui::SetCursorScreenPos(pos);
-        bool isClicked = ImGui::InvisibleButton(("##inv_" + m_id).c_str(), size);
+        bool isClicked = ImGui::InvisibleButton(("##inv_" + m_id).c_str(), ImVec2(bounds.Width, bounds.Height));
         bool isHovered = ImGui::IsItemHovered();
         bool isActive = ImGui::IsItemActive();
 
@@ -52,25 +53,25 @@ namespace UI {
             frame = ANIM_FRAME_COUNT - 1; // Last frame is fully pressed
         }
 
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-        Texture_t* texStates = NexusSDK::Content->GetTexture(IDB_BUTTON_STATES);
-        Texture_t* texBorder = NexusSDK::Content->GetTexture(IDB_BUTTON_BORDER);
+        AsyncTexture* texStates = NexusSDK::Content->GetTexture(IDB_BUTTON_STATES);
+        AsyncTexture* texBorder = NexusSDK::Content->GetTexture(IDB_BUTTON_BORDER);
 
         if (texStates) {
-            float totalWidth = static_cast<float>(texStates->Width);
-            float totalHeight = static_cast<float>(texStates->Height);
+            float totalWidth = static_cast<float>(texStates->GetWidth());
+            float totalHeight = static_cast<float>(texStates->GetHeight());
             
-            float uv0x = (frame * ATLAS_SPRITE_WIDTH) / totalWidth;
-            float uv0y = 0.0f;
-            float uv1x = ((frame + 1) * ATLAS_SPRITE_WIDTH) / totalWidth;
-            float uv1y = ATLAS_SPRITE_HEIGHT / totalHeight;
+            if (totalWidth > 0.0f && totalHeight > 0.0f) {
+                float uv0x = (frame * ATLAS_SPRITE_WIDTH) / totalWidth;
+                float uv0y = 0.0f;
+                float uv1x = ((frame + 1) * ATLAS_SPRITE_WIDTH) / totalWidth;
+                float uv1y = ATLAS_SPRITE_HEIGHT / totalHeight;
 
-            drawList->AddImage((ImTextureID)texStates->Resource, 
-                               ImVec2(pos.x + 3, pos.y + 3), 
-                               ImVec2(pos.x + size.x - 3, pos.y + size.y - 2), 
-                               ImVec2(uv0x, uv0y), 
-                               ImVec2(uv1x, uv1y), ImGui::GetColorU32(IM_COL32_WHITE));
+                SpriteBatch::DrawTexture(texStates, 
+                                   ImVec2(bounds.X + 3, bounds.Y + 3), 
+                                   ImVec2(bounds.X + bounds.Width - 3, bounds.Y + bounds.Height - 2), 
+                                   ImVec2(uv0x, uv0y), 
+                                   ImVec2(uv1x, uv1y));
+            }
         }
 
         if (texBorder) {
@@ -78,39 +79,29 @@ namespace UI {
             float bh = 4.0f;
 
             // Top
-            drawList->AddImage((ImTextureID)texBorder->Resource,
-                               ImVec2(pos.x + 2, pos.y),
-                               ImVec2(pos.x + size.x - 3, pos.y + 4),
-                               ImVec2(0/bw, 0/bh), ImVec2(1/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTexture(texBorder,
+                               ImVec2(bounds.X + 2, bounds.Y),
+                               ImVec2(bounds.X + bounds.Width - 3, bounds.Y + 4),
+                               ImVec2(0/bw, 0/bh), ImVec2(1/bw, 4/bh));
             // Right
-            drawList->AddImage((ImTextureID)texBorder->Resource,
-                               ImVec2(pos.x + size.x - 4, pos.y + 2),
-                               ImVec2(pos.x + size.x, pos.y + size.y - 1),
-                               ImVec2(0/bw, 1/bh), ImVec2(4/bw, 2/bh), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTexture(texBorder,
+                               ImVec2(bounds.X + bounds.Width - 4, bounds.Y + 2),
+                               ImVec2(bounds.X + bounds.Width, bounds.Y + bounds.Height - 1),
+                               ImVec2(0/bw, 1/bh), ImVec2(4/bw, 2/bh));
             // Bottom
-            drawList->AddImage((ImTextureID)texBorder->Resource,
-                               ImVec2(pos.x + 3, pos.y + size.y - 4),
-                               ImVec2(pos.x + size.x - 3, pos.y + size.y),
-                               ImVec2(1/bw, 0/bh), ImVec2(2/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTexture(texBorder,
+                               ImVec2(bounds.X + 3, bounds.Y + bounds.Height - 4),
+                               ImVec2(bounds.X + bounds.Width - 3, bounds.Y + bounds.Height),
+                               ImVec2(1/bw, 0/bh), ImVec2(2/bw, 4/bh));
             // Left
-            drawList->AddImage((ImTextureID)texBorder->Resource,
-                               ImVec2(pos.x, pos.y + 2),
-                               ImVec2(pos.x + 4, pos.y + size.y - 1),
-                               ImVec2(0/bw, 3/bh), ImVec2(4/bw, 4/bh), ImGui::GetColorU32(IM_COL32_WHITE));
+            SpriteBatch::DrawTexture(texBorder,
+                               ImVec2(bounds.X, bounds.Y + 2),
+                               ImVec2(bounds.X + 4, bounds.Y + bounds.Height - 1),
+                               ImVec2(0/bw, 3/bh), ImVec2(4/bw, 4/bh));
         }
 
         if (TextLabel) {
-            ImVec2 textSize = TextLabel->CalcSize();
-            float textX = pos.x + (size.x - textSize.x) / 2.0f;
-            float textY = pos.y + (size.y - textSize.y) / 2.0f;
-
-            Rectangle textBounds;
-            textBounds.X = textX;
-            textBounds.Y = textY;
-            textBounds.Width = textSize.x;
-            textBounds.Height = textSize.y;
-
-            TextLabel->Draw(textBounds, scale);
+            TextLabel->Draw(bounds);
         }
     }
 

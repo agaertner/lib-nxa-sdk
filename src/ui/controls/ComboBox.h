@@ -20,10 +20,9 @@ public:
     std::function<void(int)> OnValueChanged;
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override {
+    virtual void OnDraw(const Rectangle& bounds) override {
         if (!SelectedIndex || Options.empty() || *SelectedIndex < 0 || *SelectedIndex >= (int)Options.size()) return;
 
-        ImGui::SetCursorScreenPos(bounds.GetMin());
         ImGui::SetNextItemWidth(bounds.Width);
         if (ImGui::BeginCombo(Text.c_str(), Options[*SelectedIndex].c_str())) {
             for (size_t i = 0; i < Options.size(); i++) {

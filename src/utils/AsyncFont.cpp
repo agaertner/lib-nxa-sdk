@@ -13,16 +13,25 @@ namespace NexusSDK {
     }
 
     AsyncFont::AsyncFont(const std::string& identifier, const std::string& resourceName, float fontSize, AddonAPI_t* api, HMODULE moduleHandle)
-        : m_identifier(identifier), m_resourceName(resourceName), m_fontSize(fontSize), m_api(api), m_moduleHandle(moduleHandle), m_isLoadRequested(false)
+        : m_identifier(identifier), m_resourceName(resourceName), m_fontSize(fontSize), m_api(api), m_moduleHandle(moduleHandle), m_isLoadRequested(false), m_isOwned(true), m_unownedFont(nullptr)
+    {
+    }
+
+    AsyncFont::AsyncFont(ImFont* unownedFont)
+        : m_identifier(""), m_resourceName(""), m_fontSize(0.0f), m_api(nullptr), m_moduleHandle(nullptr), m_isLoadRequested(true), m_isOwned(false), m_unownedFont(unownedFont)
     {
     }
 
     AsyncFont::~AsyncFont() {
-        Dispose();
+        if (m_isOwned && m_isLoadRequested) {
+            m_api->Fonts_Release(m_identifier.c_str(), FontReceiveCallback);
+            s_loadedFonts.erase(m_identifier);
+            m_isLoadRequested = false;
+        }
     }
 
     void AsyncFont::Load() {
-        if (m_isLoadRequested) return;
+        if (!m_isOwned || m_isLoadRequested) return;
 
         if (s_loadedFonts.find(m_identifier) != s_loadedFonts.end()) {
             m_isLoadRequested = true;
@@ -46,22 +55,20 @@ namespace NexusSDK {
         m_isLoadRequested = true;
     }
 
-    void* AsyncFont::Get() {
-        if (!m_isLoadRequested) return nullptr;
+    ImFont* AsyncFont::Get() {
+        if (!m_isOwned) return m_unownedFont;
+
+        if (!m_isLoadRequested) {
+            Load();
+        }
 
         auto it = s_loadedFonts.find(m_identifier);
         if (it != s_loadedFonts.end()) {
-            return it->second;
+            return (ImFont*)it->second;
         }
         return nullptr;
     }
 
-    void AsyncFont::Dispose() {
-        if (m_isLoadRequested) {
-            m_api->Fonts_Release(m_identifier.c_str(), FontReceiveCallback);
-            s_loadedFonts.erase(m_identifier);
-            m_isLoadRequested = false;
-        }
-    }
+
 
 }

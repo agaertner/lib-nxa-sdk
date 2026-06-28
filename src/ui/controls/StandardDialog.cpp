@@ -35,8 +35,8 @@ StandardDialog::StandardDialog(const std::string& text, DialogIcon sysIcon, cons
     for (size_t i = 0; i < m_buttonsData.size(); ++i) {
         auto& btnData = m_buttonsData[i];
         auto btn = std::make_shared<Button>("btn_" + std::to_string(i), btnData.Text);
-        btn->Width = m_buttonWidth;
-        btn->Height = m_buttonHeight;
+        btn->Width(m_buttonWidth);
+        btn->Height(m_buttonHeight);
         btn->OnClick = [this, btnData]() {
             if (btnData.OnClick) btnData.OnClick();
             Close();
@@ -59,14 +59,12 @@ std::shared_ptr<StandardDialog> StandardDialog::Show(const std::string& text, Di
 
 void StandardDialog::Close() {
     SetVisible(false);
-    
-    if (auto parent = GetParent()) {
-        parent->RemoveChild(shared_from_this());
-    }
+    SetParent(nullptr);
 }
 
-void StandardDialog::CalculateLayout(float scale) {
+void StandardDialog::CalculateLayout() {
     if (m_layoutCalculated) return;
+    float scale = UIScale::Get();
 
     m_maxIconSize = (m_icon == DialogIcon::None) ? 0.0f : 64.0f;
     float iconMargin = 5.0f;
@@ -87,14 +85,14 @@ void StandardDialog::CalculateLayout(float scale) {
     m_layoutCalculated = true;
 }
 
-void StandardDialog::Draw(const Rectangle& bounds, float scale) {
-    if (!m_visible) return;
-
+void StandardDialog::OnDraw(const Rectangle& bounds) {
+    float scale = UIScale::Get();
+    
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
 
-    Style paddingGuard(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
-    Style roundingGuard(ImGuiStyleVar_WindowRounding, 0.0f);
-    Color bgGuard(ImGuiCol_WindowBg, 0.0f, 0.0f, 0.0f, 0.0f);
+    StyleGuard padding(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); 
+    StyleGuard rounding(ImGuiStyleVar_WindowRounding, 0.0f);
+    ColorGuard bg(ImGuiCol_WindowBg, 0.0f, 0.0f, 0.0f, 0.0f);
 
     // Center on screen
     ImVec2 center = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
@@ -102,16 +100,10 @@ void StandardDialog::Draw(const Rectangle& bounds, float scale) {
     ImGui::SetNextWindowSize(ImVec2(m_size.x * scale, 0)); // Let height auto-size
 
     if (ImGui::Begin((m_id + "_Dialog").c_str(), &m_visible, flags)) {
-        OnDraw(bounds, scale);
-    }
-    ImGui::End();
-}
+        CalculateLayout();
 
-void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
-    CalculateLayout(scale);
-
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    Texture_t* bgTex = NexusSDK::Content->GetTexture(IDB_DIALOG_BG);
+        AsyncTexture* bgTexAsync = NexusSDK::Content->GetTexture(IDB_DIALOG_BG);
+        Texture_t* bgTex = bgTexAsync ? bgTexAsync->Get() : nullptr;
         if (bgTex) {
             ImVec2 p_min = ImGui::GetWindowPos();
             ImVec2 p_max = ImVec2(p_min.x + ImGui::GetWindowSize().x, p_min.y + ImGui::GetWindowSize().y);
@@ -149,7 +141,8 @@ void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
 
         // Icon
         if (m_icon != DialogIcon::None) {
-            Texture_t* iconAtlas = NexusSDK::Content->GetTexture(IDB_DIALOG_ICONS);
+            AsyncTexture* iconAtlasAsync = NexusSDK::Content->GetTexture(IDB_DIALOG_ICONS);
+            Texture_t* iconAtlas = iconAtlasAsync ? iconAtlasAsync->Get() : nullptr;
             if (iconAtlas) {
                 ImVec2 uv0 = ImVec2(0, 0);
                 ImVec2 uv1 = ImVec2(64.0f / iconAtlas->Width, 64.0f / iconAtlas->Height);
@@ -183,9 +176,9 @@ void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
         labelBounds.Width = wrapWidth;
         labelBounds.Height = 0; // Let Label calc its own height
         m_label->WrapText = true;
-        m_label->Draw(labelBounds, scale);
+        m_label->Draw(labelBounds);
 
-        float currentY = ImGui::GetCursorPosY();
+        float currentY = ImGui::GetCursorPosY() + (m_label->GetSize().y * scale);
         if (currentY < startY + (m_maxIconSize * scale)) {
             currentY = startY + (m_maxIconSize * scale);
         }
@@ -195,7 +188,7 @@ void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
 
         // Force the window to be EXACTLY m_size.x * scale wide
         ImGui::SetCursorPosX((m_size.x * scale) - 1.0f);
-        ImGui::Dummy(ImVec2(1.0f, 0.0f));
+        SpriteBatch::ClaimWidth(1.0f);
 
         // Buttons
         float buttonsTotalWidthScaled = (m_children.size() * m_buttonWidth * scale) + ((m_children.size() - 1) * 3.0f * scale);
@@ -210,27 +203,28 @@ void StandardDialog::OnDraw(const Rectangle& bounds, float scale) {
         float buttonsStartXScaled = (m_size.x * scale) - rightPad - buttonsTotalWidthScaled;
         ImGui::SetCursorPosX(buttonsStartXScaled);
 
+        float currentBtnX = ImGui::GetCursorScreenPos().x;
+        float currentBtnY = ImGui::GetCursorScreenPos().y;
+
         for (size_t i = 0; i < m_children.size(); ++i) {
             if (auto btn = std::dynamic_pointer_cast<Button>(m_children[i])) {
-                btn->Width = m_buttonWidth;
+                btn->Width(m_buttonWidth);
                 
                 Rectangle childBounds;
-                childBounds.X = ImGui::GetCursorScreenPos().x;
-                childBounds.Y = ImGui::GetCursorScreenPos().y;
+                childBounds.X = currentBtnX;
+                childBounds.Y = currentBtnY;
                 childBounds.Width = m_buttonWidth * scale;
                 childBounds.Height = m_buttonHeight * scale;
 
-                // Standard clean rendering. Button handles its own state internally now.
-                ImGui::SetCursorScreenPos(ImVec2(childBounds.X, childBounds.Y));
-                btn->Draw(childBounds, scale);
+                btn->Draw(childBounds);
 
-                // Restore cursor for next button
-                ImGui::SetCursorScreenPos(ImVec2(childBounds.X + childBounds.Width + 3.0f * scale, childBounds.Y));
+                currentBtnX += childBounds.Width + 3.0f * scale;
             }
         }
 
-        ImGui::Dummy(ImVec2(0, m_buttonHeight * scale + 10.0f));
+        SpriteBatch::ClaimHeight(m_buttonHeight * scale + 10.0f);
+    }
+    ImGui::End();
 }
-
 } // namespace UI
 } // namespace NexusSDK

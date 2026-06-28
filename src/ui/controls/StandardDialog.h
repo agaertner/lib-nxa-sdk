@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ControlBase.h"
+#include "Container.h"
 #include "Button.h"
 #include "Label.h"
 #include <string>
@@ -33,7 +33,7 @@ struct DialogButton {
     static DialogButton Close();
 };
 
-class StandardDialog : public ControlBase {
+class StandardDialog : public Container {
 public:
     StandardDialog(const std::string& text, DialogIcon sysIcon, const std::vector<DialogButton>& buttons);
     ~StandardDialog() = default;
@@ -45,9 +45,8 @@ public:
     }
 
 protected:
-    virtual void OnDraw(const Rectangle& bounds, float scale) override;
-    virtual void Draw(const Rectangle& bounds, float scale) override;
-    virtual void CalculateLayout(float scale);
+    virtual void OnDraw(const Rectangle& bounds) override;
+    virtual void CalculateLayout();
     void Close();
 
     std::string m_text;

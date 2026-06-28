@@ -1,7 +1,7 @@
 #include "../../nexus-sdk-resource.h"
 #include "Checkbox.h"
 #include <NexusSDK.h>
-
+#include "../SpriteBatch.h"
 
 #include <imgui.h>
 
@@ -10,14 +10,11 @@ namespace UI {
 
 
 
-    void Checkbox::OnDraw(const Rectangle& bounds, float scale) {
+    void Checkbox::OnDraw(const Rectangle& bounds) {
         if (!Value) return;
+        float scale = UIScale::Get();
 
         ImVec2 interactSize = ImVec2(16.0f * scale, 16.0f * scale); 
-        ImVec2 drawSize = ImVec2(32.0f * scale, 32.0f * scale); 
-
-        ImVec2 pos = bounds.GetMin();
-        ImGui::SetCursorScreenPos(pos);
 
         if (ImGui::InvisibleButton(m_id.c_str(), interactSize)) {
             *Value = !(*Value);
@@ -30,33 +27,41 @@ namespace UI {
         bool isHovered = ImGui::IsItemHovered();
         bool isChecked = *Value;
         
-        Texture_t* tex = nullptr;
+        AsyncTexture* texAsync = nullptr;
         if (*Value) {
-            tex = NexusSDK::Content->GetTexture(isHovered ? IDB_CHECKBOX_CHECKED_ACTIVE : IDB_CHECKBOX_CHECKED);
+            texAsync = NexusSDK::Content->GetTexture(isHovered ? IDB_CHECKBOX_CHECKED_ACTIVE : IDB_CHECKBOX_CHECKED);
         } else {
-            tex = NexusSDK::Content->GetTexture(isHovered ? IDB_CHECKBOX_UNCHECKED_ACTIVE : IDB_CHECKBOX_UNCHECKED);
+            texAsync = NexusSDK::Content->GetTexture(isHovered ? IDB_CHECKBOX_UNCHECKED_ACTIVE : IDB_CHECKBOX_UNCHECKED);
         }
+        float unscaledInteractW = 16.0f;
+        float unscaledInteractH = 16.0f;
+        if (texAsync && texAsync->GetWidth() > 0) {
+            float unscaledDrawW = 32.0f;
+            float unscaledDrawH = 32.0f;
 
-        ImVec2 drawPos = ImVec2(pos.x - (drawSize.x - interactSize.x) / 2.0f, pos.y - (drawSize.y - interactSize.y) / 2.0f);
-
-        if (tex) {
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)tex->Resource, drawPos, ImVec2(drawPos.x + drawSize.x, drawPos.y + drawSize.y), ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(IM_COL32_WHITE));
+            Rectangle destRect;
+            destRect.X = -(unscaledDrawW - unscaledInteractW) / 2.0f;
+            destRect.Y = -(unscaledDrawH - unscaledInteractH) / 2.0f;
+            destRect.Width = unscaledDrawW;
+            destRect.Height = unscaledDrawH;
+            SpriteBatch::DrawTextureOnCtrl(this, texAsync, destRect);
         } else {
-            ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + interactSize.x, pos.y + interactSize.y), isChecked ? ImGui::GetColorU32(IM_COL32(0,255,0,255)) : ImGui::GetColorU32(IM_COL32(255,0,0,255)));
+            Rectangle fillRect = { 0, 0, unscaledInteractW, unscaledInteractH };
+            SpriteBatch::DrawFilledRectOnCtrl(this, fillRect, isChecked ? IM_COL32(0,255,0,255) : IM_COL32(255,0,0,255));
         }
 
         if (TextLabel) {
-            float spacing = 4.0f * scale;
+            float unscaledSpacing = 4.0f;
             ImVec2 textSize = TextLabel->CalcSize();
-            float offset = (interactSize.y - textSize.y) / 2.0f;
+            float unscaledOffset = (unscaledInteractH - textSize.y) / 2.0f;
 
             Rectangle textBounds;
-            textBounds.X = pos.x + interactSize.x + spacing;
-            textBounds.Y = pos.y + offset;
-            textBounds.Width = textSize.x;
-            textBounds.Height = textSize.y;
+            textBounds.X = bounds.X + interactSize.x + (unscaledSpacing * scale);
+            textBounds.Y = bounds.Y + (unscaledOffset * scale);
+            textBounds.Width = textSize.x * scale;
+            textBounds.Height = textSize.y * scale;
 
-            TextLabel->Draw(textBounds, scale);
+            TextLabel->Draw(textBounds);
         }
     }
 
